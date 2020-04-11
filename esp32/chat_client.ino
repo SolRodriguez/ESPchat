@@ -34,7 +34,7 @@ void loop() {
 void random_draw() {
   for(uint8_t y = 0; y < SCREEN_WIDTH; y++){
     for(uint8_t x = 0; x < SCREEN_WIDTH; x++){
-      tft.drawPixel(x, y, 6499); // colors from 0 to 2^16-1
+      tft.drawPixel(x, y, random(65536)); // colors from 0 to 2^16-1
     }
   }
 }
