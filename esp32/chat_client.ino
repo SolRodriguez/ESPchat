@@ -4,15 +4,19 @@
 #include <string.h>
 
 TFT_eSPI tft = TFT_eSPI();
+const int IMAGE_SIZE = 128;
 const int SCREEN_HEIGHT = 160;
-const int SCREEN_WIDTH = 64;
+const int SCREEN_WIDTH = 128;
 
 char network[] = "2WIRE782";  //SSID CHANGE!!
 char password[] = "4532037186"; //Password for WiFi CHANGE!!!
 char host[] = "608dev-2.net";
+
 const int RESPONSE_TIMEOUT = 6000; //ms to wait for response from host
 const uint16_t OUT_BUFFER_SIZE = 1000; //size of buffer to hold HTTP response
 char response[OUT_BUFFER_SIZE]; //char array buffer to hold HTTP request
+
+uint16_t image[IMAGE_SIZE*IMAGE_SIZE];
 
 void setup() {
   Serial.begin(115200); 
@@ -26,16 +30,30 @@ void setup() {
 
 void loop() {
   int time1 = millis();
-  random_draw();
-  Serial.printf("It took %d milliseconds to write out a 128x128 image.\n", millis()-time1);
+  //random_draw();
+  generate_image();
+  Serial.printf("It took %d milliseconds to generate a %dx%d image.\n", millis()-time1, IMAGE_SIZE, IMAGE_SIZE);
+
+  int time2 = millis();
+  //random_draw();
+  //generate_image();
+  tft.pushImage(0, 0, IMAGE_SIZE, IMAGE_SIZE, image);
+  Serial.printf("It took %d milliseconds to display a %dx%d image.\n", millis()-time2, IMAGE_SIZE, IMAGE_SIZE);
   delay(100);
 }
 
 void random_draw() {
-  for(uint8_t y = 0; y < SCREEN_WIDTH; y++){
-    for(uint8_t x = 0; x < SCREEN_WIDTH; x++){
-      tft.drawPixel(x, y, random(65536)); // colors from 0 to 2^16-1
+  for(uint8_t y = 0; y < IMAGE_SIZE; y++){
+    for(uint8_t x = 0; x < IMAGE_SIZE; x++){
+      tft.pushColor(random(65536));
+      //tft.drawPixel(x, y, random(65536)); // colors from 0 to 2^16-1
     }
+  }
+}
+
+void generate_image() {
+  for(uint16_t i = 0; i < IMAGE_SIZE*IMAGE_SIZE; i++){
+    image[i] = random(65536);
   }
 }
 
