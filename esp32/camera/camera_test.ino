@@ -2,12 +2,19 @@
 #include <ArduCAM.h>
 #include "memorysaver.h"
 #include <Arduino.h>
+#include "RequestSender.h"
 
 Camera myCam;
+RequestSender myRequest;
 
 void setup(){
     Serial.begin(115200);
     myCam.setup();
+
+    myRequest.begin_wifi("2WIRE782", "4532037186");
+    myRequest.set_host("608dev-2.net");
+    myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
+    myRequest.set_username("vmreyes");
 }
 
 void loop(){
@@ -18,5 +25,11 @@ void loop(){
         Serial.print(",");
     }
     Serial.print("\n");
-    delay(5000);
+
+    char audio[] = "abc";
+
+    myRequest.send_video(data, audio);
+
+    delay(10000);
 }
+
