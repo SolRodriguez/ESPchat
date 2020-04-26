@@ -11,8 +11,8 @@ void Camera::setup(){
   pinMode(CS,OUTPUT);
   Wire.begin();
   Serial.println(F("ArduCAM Start!"));
-  SPI.begin();
-  SPI.setFrequency(4000000); //4MHz
+  //SPI.begin();
+  //SPI.setFrequency(4000000); //4MHz
 
   arduCam.write_reg(ARDUCHIP_TEST1, 0x55);
   temp = arduCam.read_reg(ARDUCHIP_TEST1);
@@ -31,11 +31,11 @@ void Camera::setup(){
 
   arduCam.set_format(BMP); // resolution 320x240
   arduCam.InitCAM();
-  arduCam.OV2640_set_JPEG_size(0); 
+  //arduCam.OV2640_set_JPEG_size(3); 
   arduCam.clear_fifo_flag();
 }
 
-char* Camera::get_image(){
+uint8_t* Camera::get_image(){
   start_capture();
   Serial.println(F("CAM Capturing"));
   
@@ -50,24 +50,33 @@ char* Camera::get_image(){
 
   uint32_t len = arduCam.read_fifo_length();
   Serial.printf("The length of the image is %d", len);
-  len -= 8;
+  len -= 8; // read_fifo over reports by 8 bytes? unsure.
   Serial.printf("Fixed it to %d.", len);
 
   arduCam.CS_LOW();
   arduCam.set_fifo_burst(); 
 
-  int i = 0;
-  while(len--) {
-    temp = SPI.transfer(0x00);
-    if(temp == 0x00) temp++;
-    img_data[i] = (char) temp;
-    i++;
+  int k = 0;
+  int time3 = millis();
+
+  for(int i = 0; i < 240; i++){
+    for(int j = 0; j < 320; j++){
+      uint8_t hv = SPI.transfer(0x00);
+      uint8_t hl = SPI.transfer(0x00);
+      if(!(i % 4) && !(j % 4)){
+        uint16_t pixel_val = hv << 8 | hl;
+        img_data[k++] = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
+      }
+    }
   }
+
+  Serial.printf("Time to store 16x smaller: %d ms\n", millis()-time3);
 
   return img_data;
 }
 
 void Camera::start_capture(){
+    arduCam.flush_fifo();
     arduCam.clear_fifo_flag();
     arduCam.start_capture();
 }
