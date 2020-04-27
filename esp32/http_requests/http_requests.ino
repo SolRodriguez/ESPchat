@@ -2,8 +2,8 @@
 #include <SPI.h>
 
 ////Kim's WiFi
-//char network[] = "ATT8s7N3kF";
-//char password[] = "6trp7q?vtm3a";
+char network[] = "ATT8s7N3kF";
+char password[] = "6trp7q?vtm3a";
 
 char picture_data[2000]; //define here
 char user[20]; //define here
