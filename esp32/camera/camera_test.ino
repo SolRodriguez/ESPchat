@@ -26,7 +26,7 @@ void setup(){
     Serial.print("Starting WiFi.\n");
     myRequest.begin_wifi("2WIRE782", "4532037186");
     myRequest.set_host("608dev-2.net");
-    myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
+    myRequest.set_destination("/sandbox/sc/team044/espchat/server/vmreyes/espchat.py");
     myRequest.set_username("vmreyes");
 
     Serial.println("Finished setup.");
@@ -48,9 +48,10 @@ void loop(){
     //    tft.pushColor(data[i]);
     //}
 
-    //char audio[] = "abc";
+    char audio[] = "abc";
 
-    //myRequest.send_video(data, audio);
+    myRequest.set_host("608dev-2.net");
+    myRequest.send_video((char*) data, audio);
 
     delay(2000);
 }

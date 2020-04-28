@@ -22,7 +22,7 @@ class Camera
   public:
   Camera();
   void setup();
-  uint8_t* get_image();
+  char* get_image();
 
   private:
   void start_capture();
