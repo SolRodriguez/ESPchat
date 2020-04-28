@@ -42,6 +42,7 @@ def begin_db():
     conn = sqlite3.connect(USER_DATA)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS user_data (user text, video text, audio text);''')
+    c.commit()
     return c, conn
 
 def user_exists(user, db):
