@@ -65,7 +65,14 @@ uint8_t* Camera::get_image(){
       uint8_t hl = SPI.transfer(0x00);
       if(!(i % 4) && !(j % 4)){
         uint16_t pixel_val = hv << 8 | hl;
-        img_data[k++] = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
+        uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
+        if(pixel_data == 0x00){
+          pixel_data += 36;
+        }
+        if((char) pixel_data == '\0'){
+          Serial.println("asdf");
+        }
+        img_data[k++] = pixel_data;
       }
     }
   }

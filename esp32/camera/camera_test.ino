@@ -34,25 +34,19 @@ void setup(){
 
 void loop(){
     uint8_t* data = myCam.get_image();
-    //Serial.println("\nPrinting first 10..");
-    //for(int i = 0; i < 10; i++){
-    //    Serial.print((uint8_t) data[i]);
-    //    Serial.print(",");
-    //}
+    Serial.println("\nPrinting first 10..");
+    for(int i = 0; i < 10; i++){
+        Serial.print(data[i]);
+        Serial.print(",");
+    }
 
-    //Serial.print("\n");
+    Serial.print("\n");
 
     tft.pushImage(0,0,80,60,data);
-    //tft.drawImage(0,0)
-    //for(int i = 0; i < 120*160; i++){
-    //    tft.pushColor(data[i]);
-    //}
 
     char audio[] = "abc";
 
     myRequest.set_host("608dev-2.net");
     myRequest.send_video((char*) data, audio);
-
-    delay(2000);
 }
 
