@@ -12,7 +12,6 @@
 //Original of RequestSender.cpp
 #include <WiFi.h>
 
-
 Button::Button(int p) {
   flag = 0;  
   state = 0;

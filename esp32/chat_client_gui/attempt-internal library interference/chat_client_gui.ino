@@ -1,4 +1,4 @@
-#include "Chat_client.h"   
+#include "Chat_Client.h"   
 //Originals from chat_client_gui
 #include <WiFi.h> //Connect to WiFi Network
 #include <SPI.h>
@@ -117,7 +117,7 @@ void setup() {
   //Original from set-up camera_test
   myCam.setup();
   Serial.print("Starting WiFi.\n");
-  myRequest.begin_wifi("2WIRE782", "4532037186");
+  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
   myRequest.set_username("vmreyes");
