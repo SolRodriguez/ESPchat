@@ -12,8 +12,8 @@ class Camera
   uint8_t vid;
   uint8_t pid;
 
-  static const size_t imgSize = (240*320);
-  char img_data[imgSize];
+  static const size_t imgSize = (80*60);
+  uint8_t img_data[imgSize];
 
   uint8_t temp = 0;
   uint8_t temp_last = 0;

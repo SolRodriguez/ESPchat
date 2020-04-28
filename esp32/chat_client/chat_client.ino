@@ -61,7 +61,7 @@ void setup() {
   tft.setRotation(2);
   tft.setTextSize(1);
   tft.fillScreen(TFT_BLACK);
-  tft.setTextColor(TFT_RED, TFT_BLACK); //set color of font to green foreground, black background
+  tft.setTextColor(TFT_RED, TFT_BLACK); //set color of font to red foreground, black background
   pinMode(INPUT_PIN1, INPUT_PULLUP); //set input pin as an input!
   pinMode(INPUT_PIN2, INPUT_PULLUP); //set input pin as an input!
   state = IDLE;
