@@ -1,7 +1,7 @@
 import sqlite3
 import requests
 
-user_hist = "__HOME__/espchat/posts.db"
+user_hist = "__HOME__/espchat_db/posts.db"
 
 
 def create_db():
@@ -10,7 +10,7 @@ def create_db():
     c = conn.cursor()
 
     c.execute(
-        '''CREATE TABLE IF NOT EXISTS user_hist (user text, pic VARBINARY(MAX), audio VARBINARY(MAX));''')  # will add new entries for vid/audio once we have the hardware
+        '''CREATE TABLE IF NOT EXISTS user_hist (user text, pic BLOB NOT NULL, audio BLOB NOT NULL);''')  # will add new entries for vid/audio once we have the hardware
     conn.commit()
 
     return c, conn
