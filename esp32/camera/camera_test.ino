@@ -46,7 +46,17 @@ void loop(){
 
     char audio[] = "abc";
 
+    myRequest.set_username("vmreyes");
     myRequest.set_host("608dev-2.net");
     myRequest.send_video((char*) data, audio);
+
+    myRequest.set_username("solr");
+    myRequest.set_host("608dev-2.net");
+    myRequest.send_video((char*) data, audio);
+
+    myRequest.set_username("dshkreli");
+    myRequest.set_host("608dev-2.net");
+    myRequest.send_video((char*) data, audio);
+    delay(5000);
 }
 
