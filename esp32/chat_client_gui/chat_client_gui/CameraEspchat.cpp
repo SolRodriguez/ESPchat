@@ -4,12 +4,15 @@
 #include <ArduCAM.h>
 #include <SPI.h>
 #include "memorysaver.h"
-#include "CameraEspchat.h"  //////*************change* done****************///
+#include "CameraEspchat.h"  
 
 //Original of RequestSender.cpp
 #include "Arduino.h"
-//#include "requestSender.h"   //////*************change******blanked out ***********///
 #include <WiFi.h>
+
+
+
+
 
 //Original of Camera.cpp
 Camera::Camera(){}
@@ -79,8 +82,6 @@ void Camera::start_capture(){
     arduCam.clear_fifo_flag();
     arduCam.start_capture();
 }
-
-
 
 //Original of RequestSender.cpp
 RequestSender::RequestSender(){
