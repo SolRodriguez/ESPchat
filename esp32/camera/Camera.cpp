@@ -69,9 +69,6 @@ uint8_t* Camera::get_image(){
         if(pixel_data == 0x00){
           pixel_data += 36;
         }
-        if((char) pixel_data == '\0'){
-          Serial.println("asdf");
-        }
         img_data[k++] = pixel_data;
       }
     }
