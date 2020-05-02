@@ -1,11 +1,10 @@
 
 //Originals from chat_client_gui
-#include <WiFi.h> //Connect to WiFi Network
+//#include <WiFi.h> //Connect to WiFi Network
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <string.h>
 #include "Button.h"
-
 
 //Original from camera_test
 #include "CameraEspchat.h"
@@ -96,10 +95,9 @@ const int SCREEN_WIDTH = 128;
 
 
 //Kim's WiFi
-char network[] = "ATT8s7N3kF";
-char password[] = "6trp7q?vtm3a";
-
-char host[] = "608dev-2.net";
+//char network[] = "ATT8s7N3kF";
+//char password[] = "6trp7q?vtm3a";
+//char host[] = "608dev-2.net";
 
 void setup() {
   //Original set-up from chat_client_gui
@@ -115,7 +113,7 @@ void setup() {
   current_choice = 0;
 
   //Original from set-up camera_test
-  myCam.setup();
+  
   myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
@@ -138,31 +136,26 @@ void loop() {
 
 
   //Original loop from camera_test
-  char* data = myCam.get_image();
-  Serial.println("\nPrinting first 10..");
-  for (int i = 0; i < 10; i++) {
-    Serial.print((uint8_t) data[i]);
-    Serial.print(",");
-  }
-  Serial.print("\n");
-
-  char audio[] = "abc";
-
-  myRequest.send_video(data, audio);
-
-  delay(10000);
+//  char* data = myCam.get_image();
+//  Serial.println("\nPrinting first 10..");
+//  for (int i = 0; i < 10; i++) {
+//    Serial.print((uint8_t) data[i]);
+//    Serial.print(",");
+//  }
+//  Serial.print("\n");
+//
+//  char audio[] = "abc";
+//
+//  myRequest.send_video(data, audio);
+//
+//  delay(10000);
 }
-
-
-
-
 
 void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
   tft.drawLine(0, 138, 128, 138, TFT_WHITE);
   tft.drawString(label_1, 5, 140, 1); tft.drawString(label_2, 69, 140, 1);
   tft.drawString(label_3, 5, 150, 1); tft.drawString(label_4, 69, 150, 1);
 }
-
 
 void fsm(uint8_t left_flag, uint8_t right_flag) {
   switch (state) {
@@ -232,6 +225,8 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
             case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 3; break;
             case 2: break;
           }
+
+          
           switch (right_flag) {
             case 0: break;
             case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 1; break;
@@ -370,10 +365,13 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
+      myCam.setup();  //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
+     // myCam.get_image();///
       tft.drawString("Taking a picture....", 0, 40, 1);
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = IMAGE;
       break;
+      
     case IMAGE: //takes picture
       delay(1200);
       //
