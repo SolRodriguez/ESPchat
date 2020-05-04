@@ -1,4 +1,3 @@
-
 //Originals from chat_client_gui
 //#include <WiFi.h> //Connect to WiFi Network
 #include <SPI.h>
@@ -366,7 +365,6 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
       myCam.setup();  //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
-     // myCam.get_image();///
       tft.drawString("Taking a picture....", 0, 40, 1);
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = IMAGE;
@@ -374,10 +372,13 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       
     case IMAGE: //takes picture
       delay(1200);
-      //
+      Serial.println("GETTING image");///kim_delete
+      myCam.capture();   ///kim_delete
       // Magical picture-taking code courtesy of Victor
       //
+
       content = true;
+      Serial.println("BACK");
       state = TO_SELECT;
       break;
 
@@ -425,12 +426,16 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       Serial.println("Selected user");
       if (selected_user == false) {
         timer = millis();
+        tft.drawString("need to select a user", 0, 80, 2);
         state = TO_RESET;
       }
+
+      else{
       tft.setCursor(0, 40, 1);
       tft.print("Sending GET request to get user's images");
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = STATE8;
+      }
       break;
     case STATE8: //user selected
       // GET request here?
@@ -446,7 +451,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      selected_user = false; ////adeddd///
+      selected_user = false; 
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
