@@ -13,18 +13,18 @@
 //Original of Microphone_class below
 Microphone::Microphone() {}
 
-  void Microphone::Microphone_setup(int p, int sample_rate, uint8_t * audio_buffer) {
+void Microphone::Microphone_setup(int p, int sample_rate, uint8_t * audio_buffer) {
   pin = p;
   sr = sample_rate;
   time_between_samples = 1000000 / sr;
   buff = audio_buffer;
 }
 
-void Microphone::rawRead() {
+uint16_t Microphone::rawRead() {
   read_value = analogRead(pin);
 }
 
-int Microphone::read() {
+uint8_t Microphone::read() {
   // converts 12-bit to 8-bit
   read_value = analogRead(pin) >> 4;
   return read_value;

@@ -1,15 +1,17 @@
-//Originals from chat_client_gui
-//#include <WiFi.h> //Connect to WiFi Network
+#include <Arduino.h>
+#include <WiFi.h> //Connect to WiFi Network
 #include <SPI.h>
-#include <TFT_eSPI.h>
 #include <string.h>
 #include "Button.h"
 
-//Original from camera_test
-#include "CameraEspchat.h"
+#include "RequestSender.h"
+
 #include <ArduCAM.h>
 #include "memorysaver.h"
-#include <Arduino.h>
+#include "Camera.h"
+
+#include <TFT_eSPI.h>
+
 
 //Original code from chat_client_gui
 // State stuff
@@ -51,14 +53,14 @@
 #define TEXT_COLOR TFT_RED
 #define CURSOR_COLOR TFT_BLUE
 
-TFT_eSPI tft = TFT_eSPI();
-
 uint8_t video[80*60*3];
 uint8_t audio[8000*2];
 
 Camera myCam;
 RequestSender myRequest;
-Microphone mic = Microphone(36,8000,audio); ////
+TFT_eSPI tft = TFT_eSPI();
+//Microphone mic = Microphone(36,8000,audio);
+mic = Microphone(A0,8000,audio);
 TaskHandle_t recordTask;
 
 const uint8_t INPUT_PIN1 = 16; //pin connected to button
@@ -67,33 +69,22 @@ const uint8_t INPUT_PIN2 = 5; //pin connected to button
 Button left_button(INPUT_PIN1);
 Button right_button(INPUT_PIN2);
 
-//temps for video recording'''
-uint32_t max_time_to_record = 3000; // 3 secs of recording //delete later on
-uint32_t time_temp;  ///delete 
-
 uint8_t state;
 
 uint8_t current_choice; // used for UI menu selection
 
-// timer stuff
-uint32_t Time_pressed;
+uint32_t Time_pressed; // timer
 uint32_t timer;
 
-// user stuff
-bool selected_user = false;
+bool selected_user = false; // user selections
 bool content = false;
 
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
 
-//Kim's WiFi
-//char network[] = "ATT8s7N3kF";
-//char password[] = "6trp7q?vtm3a";
-//char host[] = "608dev-2.net";
-
 void setup() {
   //Original set-up from chat_client_gui
-  Serial.begin(115200); //for debugging if needed.
+  Serial.begin(115200); 
   tft.init();
   tft.setRotation(2);
   tft.setTextSize(1);
@@ -104,9 +95,7 @@ void setup() {
   state = TO_MAIN_MENU;
   current_choice = 0;
 
-  //Original from set-up camera_test
-  
-  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
+  myRequest.begin_wifi("2WIRE782", "4532037186");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
   myRequest.set_username("vmreyes");
@@ -125,7 +114,6 @@ void loop() {
   }
 
   fsm(left_flag, right_flag);
-
 }
 
 void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
@@ -343,6 +331,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
       myCam.setup();  //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
+     // myCam.get_image();///
       tft.drawString("Taking a picture....", 0, 40, 1);
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = IMAGE;
@@ -350,20 +339,16 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       
     case IMAGE: //takes picture
       delay(1200);
-      Serial.println("GETTING image");
-      myCam.capture();   
+      //
       // Magical picture-taking code courtesy of Victor
       //
-
       content = true;
-      Serial.println("BACK");
       state = TO_SELECT;
       break;
 
     case TO_VIDEO:
       tft.fillScreen(BACKGROUND);
       tft.drawString("Taking a video....", 0, 40, 1);
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
       record();
       state = VIDEO;
       break;
@@ -372,8 +357,8 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       // Maybe have a separate state that actually records video,
       // while this state waits for a button hold
       // (video would only record while the button is held, or for a certain max length)
-      //video will be recorded by a certain max length 
-      //delay(1000);
+      //
+      delay(1000);
       content = true;
       Time_pressed = millis();   //gives user option to upload or go back home
       state = TO_SELECT;
@@ -404,16 +389,12 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       Serial.println("Selected user");
       if (selected_user == false) {
         timer = millis();
-        tft.drawString("need to select a user", 0, 80, 2);
         state = TO_RESET;
       }
-
-      else{
       tft.setCursor(0, 40, 1);
-      tft.print("Sending GET request to get user's images");  
+      tft.print("Sending GET request to get user's images");
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = STATE8;
-      }
       break;
     case STATE8: //user selected
       // GET request here?
@@ -429,7 +410,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      selected_user = false; 
+      selected_user = false; ////adeddd///
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
@@ -453,8 +434,6 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
   } // end of switch(state)
 }
-
-
 
 
 void record(){

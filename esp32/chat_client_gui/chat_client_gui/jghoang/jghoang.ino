@@ -1,12 +1,12 @@
 //Originals from chat_client_gui
 //#include <WiFi.h> //Connect to WiFi Network
+
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <string.h>
-#include "Button.h"
 
 //Original from camera_test
-#include "CameraEspchat.h"
+#include "EspChat.h"
 #include <ArduCAM.h>
 #include "memorysaver.h"
 #include <Arduino.h>
@@ -58,7 +58,7 @@ uint8_t audio[8000*2];
 
 Camera myCam;
 RequestSender myRequest;
-Microphone mic = Microphone(36,8000,audio); ////
+Microphone mic(36,8000,audio); 
 TaskHandle_t recordTask;
 
 const uint8_t INPUT_PIN1 = 16; //pin connected to button
