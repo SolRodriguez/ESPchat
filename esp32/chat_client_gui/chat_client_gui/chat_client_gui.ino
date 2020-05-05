@@ -10,9 +10,6 @@
 #include <ArduCAM.h>
 #include "memorysaver.h"
 #include <Arduino.h>
-Camera myCam;
-RequestSender myRequest;
-
 
 //Original code from chat_client_gui
 // State stuff
@@ -54,12 +51,15 @@ RequestSender myRequest;
 #define TEXT_COLOR TFT_RED
 #define CURSOR_COLOR TFT_BLUE
 
-// Things no longer needed now that Button class is implemented
-//const int LONG_TIMEOUT = 6000; //long press timeout
-//const int SHORT_TIMEOUT = 1000; //short press limit
-//const int CUTOFF = 2000;
-//uint8_t b1;
-//uint8_t b2;
+TFT_eSPI tft = TFT_eSPI();
+
+uint8_t video[80*60*3];
+uint8_t audio[8000*2];
+
+Camera myCam;
+RequestSender myRequest;
+Microphone mic = Microphone_setup(36,8000,audio); ////
+TaskHandle_t recordTask;
 
 const uint8_t INPUT_PIN1 = 16; //pin connected to button
 const uint8_t INPUT_PIN2 = 5; //pin connected to button
@@ -67,8 +67,11 @@ const uint8_t INPUT_PIN2 = 5; //pin connected to button
 Button left_button(INPUT_PIN1);
 Button right_button(INPUT_PIN2);
 
+//temps for video recording'''
+uint32_t max_time_to_record = 3000; // 3 secs of recording //delete later on
+uint32_t time_temp;  ///delete 
+
 uint8_t state;
-//uint8_t state2;
 
 uint8_t current_choice; // used for UI menu selection
 
@@ -80,18 +83,8 @@ uint32_t timer;
 bool selected_user = false;
 bool content = false;
 
-//temps for video recording'''
-uint32_t max_time_to_record = 3000; // 3 secs of recording
-uint32_t time_temp;
-
-
-TFT_eSPI tft = TFT_eSPI();
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
-
-//char network[] = "";  //SSID CHANGE!!
-//char password[] = ""; //Password for WiFi CHANGE!!!
-
 
 //Kim's WiFi
 //char network[] = "ATT8s7N3kF";
@@ -133,21 +126,6 @@ void loop() {
 
   fsm(left_flag, right_flag);
 
-
-  //Original loop from camera_test
-//  char* data = myCam.get_image();
-//  Serial.println("\nPrinting first 10..");
-//  for (int i = 0; i < 10; i++) {
-//    Serial.print((uint8_t) data[i]);
-//    Serial.print(",");
-//  }
-//  Serial.print("\n");
-//
-//  char audio[] = "abc";
-//
-//  myRequest.send_video(data, audio);
-//
-//  delay(10000);
 }
 
 void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
@@ -372,8 +350,8 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       
     case IMAGE: //takes picture
       delay(1200);
-      Serial.println("GETTING image");///kim_delete
-      myCam.capture();   ///kim_delete
+      Serial.println("GETTING image");
+      myCam.capture();   
       // Magical picture-taking code courtesy of Victor
       //
 
@@ -386,7 +364,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.fillScreen(BACKGROUND);
       tft.drawString("Taking a video....", 0, 40, 1);
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
-      time_temp = millis();
+      record();
       state = VIDEO;
       break;
     case VIDEO: //takes video
@@ -394,8 +372,8 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       // Maybe have a separate state that actually records video,
       // while this state waits for a button hold
       // (video would only record while the button is held, or for a certain max length)
-      //
-      delay(1000);
+      //video will be recorded by a certain max length 
+      //delay(1000);
       content = true;
       Time_pressed = millis();   //gives user option to upload or go back home
       state = TO_SELECT;
@@ -410,7 +388,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       else {
         tft.drawString("Uploading content....", 0, 40, 1);
-        tft.drawString("DUMMY SCREEN", 0, 80, 2);
+        myRequest.send_video((char*) video, (char*) audio);
         state = UPLOAD;
       }
       break;
@@ -432,7 +410,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
       else{
       tft.setCursor(0, 40, 1);
-      tft.print("Sending GET request to get user's images");
+      tft.print("Sending GET request to get user's images");  
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = STATE8;
       }
@@ -474,4 +452,52 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       //      }
 
   } // end of switch(state)
+}
+
+
+
+
+void record(){
+  int k = 0;
+  xTaskCreatePinnedToCore(
+      recordCode, /* Function to implement the task */
+      "Recording Task", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      5,  /* Priority of the task */
+      &recordTask,  /* Task handle. */
+      0); /* Core where the task should run */
+  mic.start_recording(2*1600);
+
+  for(int frames = 0; frames < 3; frames++){
+    myCam.capture();
+    for(int i = 0; i < 240; i++){
+      for(int j = 0; j < 320; j++){
+        uint8_t hv = SPI.transfer(0x00);
+        uint8_t hl = SPI.transfer(0x00);
+        if(!(i % 4) && !(j % 4)){
+          uint16_t pixel_val = hv << 8 | hl;
+          uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
+          if(pixel_data == 0x00){
+            pixel_data += 36;
+          }
+          video[k++] = pixel_data;
+        }
+      }
+    }
+    tft.pushImage(30,60,80,60,video+frames*60*80);
+  }
+  vTaskDelete(recordTask);
+
+  Serial.println("first 10 of vid and audio");
+  for(int i = 0; i < 10; i++){
+    Serial.printf("%d %d\n", video[i], audio[i]);
+  }
+}
+
+void recordCode(void* parameters){
+  while(true){
+    mic.on_update();
+    delayMicroseconds(75);
+  }
 }
