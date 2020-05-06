@@ -69,4 +69,5 @@ def request_handler(request):
             conn.close()
 	    #download (bytes, bytes)
             #return download
-            return (download[0].decode("ascii", "replace"), download[1].decode("ascii", "replace"))
+            #return (download[0].decode("ascii", "replace"), download[1].decode("ascii", "replace"))
+	    return download[0].decode("ascii", "replace")
