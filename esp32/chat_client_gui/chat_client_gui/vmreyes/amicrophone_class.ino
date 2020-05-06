@@ -25,7 +25,7 @@ class Microphone{
 
   int read(){
     // converts 12-bit to 8-bit
-    read_value = analogRead(pin) >> 4;
+    read_value = (analogRead(pin) >> 4) + 1;
     return read_value;
   }
 
