@@ -86,6 +86,7 @@ bool menu;
 
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
+char user_name[10];
 
 //Kim's WiFi
 //char network[] = "ATT8s7N3kF";
@@ -93,8 +94,9 @@ const int SCREEN_WIDTH = 128;
 //char host[] = "608dev-2.net";
 
 char users_available[30];
+char download_user_data[2000];///////////////
 int num = 0;
-char output[100] = {}; ///////////
+char output[100] = {}; 
 
 
 const int MAX = 5;
@@ -346,7 +348,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
     case STATE4://change user option
       tft.setCursor(0, 40, 1);
-      tft.print("Choose users here");
+      //tft.print("Choose users here");
       /*
          section needs upgrading
       */
@@ -466,14 +468,22 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
 
       else {
+        menu = false;
         tft.setCursor(0, 40, 1);
-        tft.print("Sending GET request to get user's images"); ///POST?
+        tft.print("Sending GET request to get user's images");
         tft.drawString("DUMMY SCREEN", 0, 80, 2);
         state = STATE8;
       }
       break;
     case STATE8: //user selected
       // GET request here?
+  //    user_name = (char*)"solr";  // the user's data we want to see,,link to state 4
+      strcpy(user_name, "solr");  //
+      myRequest.download_data(user_name, download_user_data);
+      Serial.println("*********");
+      Serial.println(download_user_data);  //data from Sol's server code when menu!= true
+
+
       timer = millis(); //time_pressed should be resetted
       delay(2000);
       selected_user = false;
