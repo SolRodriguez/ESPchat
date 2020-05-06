@@ -60,11 +60,12 @@ def request_handler(request):
         if request['values']['menu'] == 'True':
             users = userdb.execute(
                 '''SELECT DISTINCT(user) FROM user_hist;''',).fetchall()
+        
+            # return display_resp(users)
             return display_resp(users)
 
         else:
             user = request['values']['user']
-            download = userdb.execute(
-                '''SELECT pic, audio FROM user_hist WHERE user = ?;''', (user,)).fetchall()[0]
+            download = userdb.execute('''SELECT pic, audio FROM user_hist WHERE user = ?;''', (user,)).fetchall()[0]
             conn.close()
             return download
