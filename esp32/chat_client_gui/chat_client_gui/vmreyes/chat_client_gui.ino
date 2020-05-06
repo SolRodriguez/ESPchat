@@ -3,8 +3,8 @@
 #include <SPI.h>
 #include <string.h>
 #include "Button.h"
-
 #include "RequestSender.h"
+#include <esp_task_wdt.h>
 
 #include <ArduCAM.h>
 #include "memorysaver.h"
@@ -53,8 +53,10 @@
 #define TEXT_COLOR TFT_RED
 #define CURSOR_COLOR TFT_BLUE
 
-uint8_t video[80*60*3];
-uint8_t audio[8000*2];
+const uint8_t SECONDS = 4;
+
+uint8_t video[80*60*SECONDS];
+uint8_t audio[8000*SECONDS];
 
 Camera myCam;
 RequestSender myRequest;
@@ -93,6 +95,8 @@ void setup() {
   pinMode(INPUT_PIN2, INPUT_PULLUP); //set input pin as an input!
   state = TO_MAIN_MENU;
   current_choice = 0;
+
+  myCam.setup();
 
   myRequest.begin_wifi("2WIRE782", "4532037186");
   myRequest.set_host("608dev-2.net");
@@ -172,7 +176,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.fillScreen(BACKGROUND);
       current_choice = 0;
       tft.drawString("TAKE PIC OR VID", 15, 0, 2);
-      tft.drawString("Take photo", 30, 60, 2);
+      tft.drawString("Playback", 30, 60, 2);
       tft.drawString("Take video", 30, 80, 2);
       tft.drawString("Upload", 30, 100, 2);
       tft.drawString("Main Menu", 30, 120, 2);
@@ -329,10 +333,9 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
-      myCam.setup();  //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
+        //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
      // myCam.get_image();///
-      tft.drawString("Taking a picture....", 0, 40, 1);
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
+      playback(video, audio);
       state = IMAGE;
       break;
       
@@ -445,9 +448,8 @@ void record(){
       5,  /* Priority of the task */
       &recordTask,  /* Task handle. */
       0); /* Core where the task should run */
-  mic.start_recording(2*1600);
 
-  for(int frames = 0; frames < 3; frames++){
+  for(int frames = 0; frames < SECONDS; frames++){
     myCam.capture();
     for(int i = 0; i < 240; i++){
       for(int j = 0; j < 320; j++){
@@ -465,17 +467,34 @@ void record(){
     }
     tft.pushImage(30,60,80,60,video+frames*60*80);
   }
-  vTaskDelete(recordTask);
-
-  Serial.println("first 10 of vid and audio");
-  for(int i = 0; i < 10; i++){
-    Serial.printf("%d %d\n", video[i], audio[i]);
-  }
 }
 
 void recordCode(void* parameters){
-  while(true){
-    mic.on_update();
-    delayMicroseconds(75);
+  mic.start_recording(SECONDS*8000);
+  bool recording_ = true;
+  while(recording_){
+    recording_ = !mic.on_update();
+  }
+  vTaskDelete(NULL);
+}
+
+void playback(uint8_t* video, uint8_t* audio) {
+  int mil_timer = millis();
+  int mic_timer = micros();
+
+  int frames = 0;
+  int a_ind = 0;
+
+  while (frames < SECONDS) {
+    if (millis() - mil_timer >= 1000) {
+      tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
+      frames++;
+      mil_timer = millis();
+    }
+    if (micros() - mic_timer >= 125) {
+      dacWrite(25, audio[a_ind]);
+      a_ind++;
+      mic_timer = micros();
+    }
   }
 }
