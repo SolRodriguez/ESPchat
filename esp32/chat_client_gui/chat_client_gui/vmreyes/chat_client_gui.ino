@@ -333,17 +333,11 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
-        //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
-     // myCam.get_image();///
-      playback(video, audio);
       state = IMAGE;
       break;
       
-    case IMAGE: //takes picture
-      delay(1200);
-      //
-      // Magical picture-taking code courtesy of Victor
-      //
+    case IMAGE: //playback
+      playback(video, audio);
       content = true;
       state = TO_SELECT;
       break;
@@ -485,6 +479,8 @@ void playback(uint8_t* video, uint8_t* audio) {
   int frames = 0;
   int a_ind = 0;
 
+  tft.pushImage(30, 60, 80, 60, video);
+  dacWrite(25, audio[0]);
   while (frames < SECONDS) {
     if (millis() - mil_timer >= 1000) {
       tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
