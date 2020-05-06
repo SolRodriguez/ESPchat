@@ -82,6 +82,11 @@ TFT_eSPI tft = TFT_eSPI();
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
 
+const uint8_t SECONDS = 4;
+
+uint8_t video[80*60*SECONDS];
+uint8_t audio[8000*SECONDS];
+
 //WiFi info
 char network[] = "Homenetwork001";
 char password[] = "solelenamarianito";
@@ -421,7 +426,10 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = STATE8;
       break;
     case STATE8: //user selected
-      // GET request here?
+      // GET request-shkreli
+
+      // Playback
+      playback(video, audio);
       timer = millis(); //time_pressed should be resetted
       delay(2000);
       selected_user = false;
@@ -444,7 +452,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       Serial.println("IN STATE 10");
       tft.fillScreen(BACKGROUND);
       tft.drawString("Choosing user...", 0, 40, 1);
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
+      tft.drawString("DUMMY SCREEN", 0, 80, 2);git 
       timer = millis();
       state = USER_CHANGE;
       break;
@@ -459,68 +467,65 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
   } // end of switch(state)
 }
 
-void playback(uint8_t* video, uint8_t* audio) {
-  float mil_timer = millis();
-  float mic_timer = micros();
+void record(){
+  int k = 0;
+  xTaskCreatePinnedToCore(
+      recordCode, /* Function to implement the task */
+      "Recording Task", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      5,  /* Priority of the task */
+      &recordTask,  /* Task handle. */
+      0); /* Core where the task should run */
 
-  uint8_t frames = 0;
+  for(int frames = 0; frames < SECONDS; frames++){
+    myCam.capture();
+    for(int i = 0; i < 240; i++){
+      for(int j = 0; j < 320; j++){
+        uint8_t hv = SPI.transfer(0x00);
+        uint8_t hl = SPI.transfer(0x00);
+        if(!(i % 4) && !(j % 4)){
+          uint16_t pixel_val = hv << 8 | hl;
+          uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
+          if(pixel_data == 0x00){
+            pixel_data += 36;
+          }
+          video[k++] = pixel_data;
+        }
+      }
+    }
+    tft.pushImage(30,60,80,60,video+frames*60*80);
+  }
+}
+
+void recordCode(void* parameters){
+  mic.start_recording(SECONDS*8000);
+  bool recording_ = true;
+  while(recording_){
+    recording_ = !mic.on_update();
+  }
+  vTaskDelete(NULL);
+}
+
+void playback(uint8_t* video, uint8_t* audio) {
+  int mil_timer = millis();
+  int mic_timer = micros();
+
+  int frames = 0;
   int a_ind = 0;
 
-  while (frames < 3) {
-    if (millis() - mil_timer > 1000) {
+  tft.pushImage(30, 60, 80, 60, video);
+  dacWrite(25, audio[0]);
+  while (frames < SECONDS) {
+    if (millis() - mil_timer >= 1000) {
       tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
       frames++;
       mil_timer = millis();
     }
-    if (micros() - mic_timer > 125) {
+    if (micros() - mic_timer >= 125) {
       dacWrite(25, audio[a_ind]);
       a_ind++;
       mic_timer = micros();
     }
   }
 }
-
-//void record(){
-//  int k = 0;
-//  xTaskCreatePinnedToCore(
-//      recordCode, /* Function to implement the task */
-//      "Recording Task", /* Name of the task */
-//      10000,  /* Stack size in words */
-//      NULL,  /* Task input parameter */
-//      5,  /* Priority of the task */
-//      &recordTask,  /* Task handle. */
-//      0); /* Core where the task should run */
-//  mic.start_recording(2*1600);
-//
-//  for(int frames = 0; frames < 3; frames++){
-//    myCam.capture();
-//    for(int i = 0; i < 240; i++){
-//      for(int j = 0; j < 320; j++){
-//        uint8_t hv = SPI.transfer(0x00);
-//        uint8_t hl = SPI.transfer(0x00);
-//        if(!(i % 4) && !(j % 4)){
-//          uint16_t pixel_val = hv << 8 | hl;
-//          uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
-//          if(pixel_data == 0x00){
-//            pixel_data += 36;
-//          }
-//          video[k++] = pixel_data;
-//        }
-//      }
-//    }
-//    tft.pushImage(30,60,80,60,video+frames*60*80);
-//  }
-//  vTaskDelete(recordTask);
-//
-//  Serial.println("first 10 of vid and audio");
-//  for(int i = 0; i < 10; i++){
-//    Serial.printf("%d %d\n", video[i], audio[i]);
-//  }
-//}
-//
-//void recordCode(void* parameters){
-//  while(true){
-//    mic.on_update();
-//    delayMicroseconds(75);
-//  }
-//}
