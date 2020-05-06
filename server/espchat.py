@@ -67,4 +67,7 @@ def request_handler(request):
             download = userdb.execute(
                 '''SELECT pic, audio FROM user_hist WHERE user = ?;''', (user,)).fetchall()[0]
             conn.close()
-            return download
+	    #download (bytes, bytes)
+            #return download
+            #return (download[0].decode("ascii", "replace"), download[1].decode("ascii", "replace"))
+	    return download[0].decode("ascii", "replace")

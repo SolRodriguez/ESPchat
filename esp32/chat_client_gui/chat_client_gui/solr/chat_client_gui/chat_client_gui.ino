@@ -55,12 +55,6 @@ RequestSender myRequest;
 #define TEXT_COLOR TFT_RED
 #define CURSOR_COLOR TFT_BLUE
 
-// Things no longer needed now that Button class is implemented
-//const int LONG_TIMEOUT = 6000; //long press timeout
-//const int SHORT_TIMEOUT = 1000; //short press limit
-//const int CUTOFF = 2000;
-//uint8_t b1;
-//uint8_t b2;
 
 const uint8_t INPUT_PIN1 = 16; //pin connected to button
 const uint8_t INPUT_PIN2 = 5; //pin connected to button
@@ -69,8 +63,6 @@ Button left_button(INPUT_PIN1);
 Button right_button(INPUT_PIN2);
 
 uint8_t state;
-//uint8_t state2;
-
 uint8_t current_choice; // used for UI menu selection
 
 // timer stuff
@@ -90,14 +82,10 @@ TFT_eSPI tft = TFT_eSPI();
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
 
-//char network[] = "";  //SSID CHANGE!!
-//char password[] = ""; //Password for WiFi CHANGE!!!
-
-
-//Kim's WiFi
-//char network[] = "ATT8s7N3kF";
-//char password[] = "6trp7q?vtm3a";
-//char host[] = "608dev-2.net";
+//WiFi info
+char network[] = "Homenetwork001";
+char password[] = "solelenamarianito";
+char host[] = "608dev-2.net";
 
 void setup() {
   //Original set-up from chat_client_gui
@@ -113,11 +101,10 @@ void setup() {
   current_choice = 0;
 
   //Original from set-up camera_test
-  
-  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
-  myRequest.set_host("608dev-2.net");
-  myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
-  myRequest.set_username("vmreyes");
+  myRequest.begin_wifi(network, password);
+  myRequest.set_host(host);
+  myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
+  myRequest.set_username("solr");
 }
 
 void loop() {
@@ -136,19 +123,19 @@ void loop() {
 
 
   //Original loop from camera_test
-//  char* data = myCam.get_image();
-//  Serial.println("\nPrinting first 10..");
-//  for (int i = 0; i < 10; i++) {
-//    Serial.print((uint8_t) data[i]);
-//    Serial.print(",");
-//  }
-//  Serial.print("\n");
-//
-//  char audio[] = "abc";
-//
-//  myRequest.send_video(data, audio);
-//
-//  delay(10000);
+  //  char* data = myCam.get_image();
+  //  Serial.println("\nPrinting first 10..");
+  //  for (int i = 0; i < 10; i++) {
+  //    Serial.print((uint8_t) data[i]);
+  //    Serial.print(",");
+  //  }
+  //  Serial.print("\n");
+  //
+  //  char audio[] = "abc";
+  //
+  //  myRequest.send_video(data, audio);
+  //
+  //  delay(10000);
 }
 
 void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
@@ -156,6 +143,7 @@ void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_
   tft.drawString(label_1, 5, 140, 1); tft.drawString(label_2, 69, 140, 1);
   tft.drawString(label_3, 5, 150, 1); tft.drawString(label_4, 69, 150, 1);
 }
+
 
 void fsm(uint8_t left_flag, uint8_t right_flag) {
   switch (state) {
@@ -226,7 +214,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
             case 2: break;
           }
 
-          
+
           switch (right_flag) {
             case 0: break;
             case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 1; break;
@@ -366,12 +354,12 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
       myCam.setup();  //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
-     // myCam.get_image();///
+      // myCam.get_image();///
       tft.drawString("Taking a picture....", 0, 40, 1);
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = IMAGE;
       break;
-      
+
     case IMAGE: //takes picture
       delay(1200);
       //
@@ -462,7 +450,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       break;
     case USER_CHANGE:
       state = TO_STATE4;
-      // I'm unsure of what's supposed to be going on here - juju
+      // displays image (1fps) and plays audio every 125
 
       //      if (b2 == 1 && b1 == 1 && millis() - timer < LONG_TIMEOUT) {
       //        state = TO_STATE4;
@@ -470,3 +458,69 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
   } // end of switch(state)
 }
+
+void playback(uint8_t* video, uint8_t* audio) {
+  float mil_timer = millis();
+  float mic_timer = micros();
+
+  uint8_t frames = 0;
+  int a_ind = 0;
+
+  while (frames < 3) {
+    if (millis() - mil_timer > 1000) {
+      tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
+      frames++;
+      mil_timer = millis();
+    }
+    if (micros() - mic_timer > 125) {
+      dacWrite(25, audio[a_ind]);
+      a_ind++;
+      mic_timer = micros();
+    }
+  }
+}
+
+//void record(){
+//  int k = 0;
+//  xTaskCreatePinnedToCore(
+//      recordCode, /* Function to implement the task */
+//      "Recording Task", /* Name of the task */
+//      10000,  /* Stack size in words */
+//      NULL,  /* Task input parameter */
+//      5,  /* Priority of the task */
+//      &recordTask,  /* Task handle. */
+//      0); /* Core where the task should run */
+//  mic.start_recording(2*1600);
+//
+//  for(int frames = 0; frames < 3; frames++){
+//    myCam.capture();
+//    for(int i = 0; i < 240; i++){
+//      for(int j = 0; j < 320; j++){
+//        uint8_t hv = SPI.transfer(0x00);
+//        uint8_t hl = SPI.transfer(0x00);
+//        if(!(i % 4) && !(j % 4)){
+//          uint16_t pixel_val = hv << 8 | hl;
+//          uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
+//          if(pixel_data == 0x00){
+//            pixel_data += 36;
+//          }
+//          video[k++] = pixel_data;
+//        }
+//      }
+//    }
+//    tft.pushImage(30,60,80,60,video+frames*60*80);
+//  }
+//  vTaskDelete(recordTask);
+//
+//  Serial.println("first 10 of vid and audio");
+//  for(int i = 0; i < 10; i++){
+//    Serial.printf("%d %d\n", video[i], audio[i]);
+//  }
+//}
+//
+//void recordCode(void* parameters){
+//  while(true){
+//    mic.on_update();
+//    delayMicroseconds(75);
+//  }
+//}
