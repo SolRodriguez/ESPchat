@@ -100,7 +100,7 @@ void setup() {
 
   myRequest.begin_wifi("2WIRE782", "4532037186");
   myRequest.set_host("608dev-2.net");
-  myRequest.set_destination("/sandbox/sc/vmreyes/final/echo.py");
+  myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
   myRequest.set_username("vmreyes");
 }
 
@@ -369,6 +369,8 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       else {
         tft.drawString("Uploading content....", 0, 40, 1);
+        myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
+        myRequest.set_host("608dev-2.net");
         myRequest.send_video((char*) video, (char*) audio);
         state = UPLOAD;
       }
