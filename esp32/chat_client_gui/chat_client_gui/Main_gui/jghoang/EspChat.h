@@ -76,6 +76,8 @@ class RequestSender
   char username[30];
   char destination[100];
   char request_header[400];
+  //char user_name[10];
+  
   public:
     RequestSender();
     void begin_wifi(char* network, char* password) ;
@@ -83,6 +85,9 @@ class RequestSender
     void set_destination(char* dest);
     void send_video(char* img_ptr, char* audio_ptr);
     void set_username(char* username_);
+
+    void get_users(char* users_available); 
+    void download_data(char* user_name, char* download_user_data);
   private:
     uint8_t char_append(char* buff, char c, uint16_t buff_size);
     void generate_video_request_header(char* img_ptr, char* audio_ptr);
