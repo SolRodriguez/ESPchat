@@ -167,8 +167,10 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
         }
         if(storing){
           base64_decode(sample, holder, 4);
-          Serial.println((char*)holder);
-          Serial.println((char*)sample);
+          Serial.print((char*)holder);
+          Serial.print(" ");
+          Serial.print((char*)sample);
+          Serial.print(" ");
           for(uint8_t i = 0; i < 3; i++){
             video[video_index] = (uint8_t) sample[i];
             video_index++;
@@ -176,12 +178,9 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
         }
       }
 
-      // ,'
-      Serial.println("LINE 178");
-
-      for(uint8_t i = 0; i < 2; i++){
-        client.read();
-      }
+      // ,\n'
+      while(client.read() != '\'');
+      while(client.read() != '\'');
 
       Serial.println("LINE 185");
       bool storing_a = true;
@@ -196,8 +195,10 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
         }
         if(storing_a){
           base64_decode(sample, holder, 4);
-          Serial.println((char*)holder);
-          Serial.println((char*)sample);
+          Serial.print((char*)holder);
+          Serial.print(" ");
+          Serial.print((char*)sample);
+          Serial.print(" ");
           for(uint8_t i = 0; i < 3; i++){
             audio[audio_index] = (uint8_t) sample[i];
             audio_index++;
