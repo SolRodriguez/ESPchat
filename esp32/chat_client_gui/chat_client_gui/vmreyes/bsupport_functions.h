@@ -1,3 +1,6 @@
+#ifndef bsupport_functions_h 
+#define bsupport_functions_h
+
 const char PROGMEM b64_alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
@@ -135,3 +138,5 @@ uint8_t char_append(char* buff, char c, uint16_t buff_size) {
   buff[len + 1] = '\0';
   return true;
 }
+
+#endif

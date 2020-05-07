@@ -5,6 +5,7 @@
 #include "Button.h"
 #include "RequestSender.h"
 #include <esp_task_wdt.h>
+#include "amicrophone_class.h"
 
 #include <ArduCAM.h>
 #include "memorysaver.h"
