@@ -463,34 +463,23 @@ void fsm(uint8_t left_flag, uint8_t right_flag)
   case STATE4: //change user option
     tft.setCursor(0, 40, 1);
     tft.print("Select a user");
+
     //Get User Menu
     //Display & select a user
     display_menu();
     if (left_button.update() == 1){ //scroll thru user options
-    selected = (selected + 1) % ;
+    selected = (selected + 1) % 5;
+    }else if (right_button.update() == 1){ //scroll thru user options
+    selected = (selected - 1) % 5;
     }
-    if (right_button.update() == 1){ //user selected
+    if (right_button.update() == 2){ //long press, user selected
     tokenize(menu, selected);
     tft.fillScreen(TFT_BLACK);
     }
-
     delay(2000);
-    selected_user = true;
     Time_pressed = millis();
     state = TO_USER_MENU;
     break;
-    //      tft.setCursor(0, 40, 1);
-    //      tft.print("b1 - clicking through a list of user's");   // or is a new user returned to us... and we confirm them by going into state 5//
-    //      tft.setCursor(0, 80, 1);
-    //      tft.print("b2 - once done --> user menu");
-    //      //iterate throughout options
-    //      //must display options of users..
-    //      selected_user = true;
-    //      Time_pressed = millis();   /// restart timeer to have the option to leave or see post//
-    //      //go back to state 3 --> button2 == 0
-    //      if (b2 == 0) { //go back to state3  //b1==0//
-    //        state = TO_USER_MENU;
-    //      }
 
   case TO_IMAGE:
     tft.fillScreen(BACKGROUND);
@@ -697,16 +686,17 @@ void tokenize(char menu, int selection)
 {
   if (selection == 1)
   {
-    char *user_ptr= strtok(menu, '/n');
+    char *selected_user= strtok(menu, '/n');
   }
   else if (selection > 1)
   {
-    char *user_ptr= strtok(menu, '/n');
+    char *selected_user= strtok(menu, '/n');
     int8_t ctr = 0;
     while (ctr < selection)
     {
-      user_ptr = strtok(NULL, ",");
+      selected_user = strtok(NULL, ",");
       ctr ++;
     }
+
   }
 }
