@@ -21,10 +21,12 @@ class RequestSender
   void set_destination(char* dest);
   void send_video(char* img_ptr, char* audio_ptr);
   void set_username(char* username_);
+  void get_video(char* username, uint8_t* video, uint8_t* audio);
 
 
   private:
   uint8_t char_append(char* buff, char c, uint16_t buff_size);
   void generate_video_request_header(char* img_ptr, char* audio_ptr);
+  void generate_get_video_response_header(char* other_user);
 };
 #endif

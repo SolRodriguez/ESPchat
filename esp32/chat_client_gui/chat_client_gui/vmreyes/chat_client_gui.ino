@@ -312,7 +312,10 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case STATE4://change user option
       tft.setCursor(0, 40, 1);
       tft.print("Choose users here");
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
+      myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
+      myRequest.set_host("608dev-2.net");
+      myRequest.get_video("vmreyes", video, audio);
+      playback(video, audio);
       delay(2000);
       selected_user = true;
       Time_pressed = millis();
