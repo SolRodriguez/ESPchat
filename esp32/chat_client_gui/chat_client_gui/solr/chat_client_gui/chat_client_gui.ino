@@ -7,6 +7,7 @@
 #include "Button.h"
 
 //Original from camera_test
+#include "EspChat.h"
 #include "CameraEspchat.h"
 #include <ArduCAM.h>
 #include "memorysaver.h"
@@ -70,6 +71,12 @@ uint32_t timer;
 // user stuff
 bool selected_user = false;
 bool content = false;
+bool menu;
+
+char users_available[30];
+char download_user_data[2000];///////////////
+int num = 0;
+char output[100] = {};
 
 //temps for video recording'''
 uint32_t max_time_to_record = 3000; // 3 secs of recording
@@ -458,23 +465,27 @@ void fsm(uint8_t left_flag, uint8_t right_flag)
   case TO_STATE4:
     Serial.println("IN STATE4");
     tft.fillScreen(BACKGROUND);
-    state = STATE4;
-    break;
-  case STATE4: //change user option
-    tft.setCursor(0, 40, 1);
-    tft.print("Select a user");
 
     //Get User Menu
-    //Display & select a user
+    menu = true;
+    myRequest.get_users(users_available);
+    for (int i = 0; i < sizeof(users_available); i++) {
+      if (users_available[i] == '\n') {
+        num++;
+        }
+      }
+
+    state = STATE4;
+    break;
+  case STATE4: //Display & select a user
+    //tft.setCursor(0, 40, 1);
     display_menu();
     if (left_button.update() == 1){ //scroll thru user options
-    selected = (selected + 1) % 5;
-    }else if (right_button.update() == 1){ //scroll thru user options
-    selected = (selected - 1) % 5;
+    selected = (selected + 1) % num;
     }
-    if (right_button.update() == 2){ //long press, user selected
+    if (right_button.update() == 1){ //luser selected
     tokenize(menu, selected);
-    tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(BACKGROUND);
     }
     delay(2000);
     Time_pressed = millis();
