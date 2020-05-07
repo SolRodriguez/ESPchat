@@ -122,10 +122,11 @@ void setup() {
 
   //Original from set-up camera_test
 
-  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
+//  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
+  myRequest.begin_wifi("HoangSPB6-2G", "sU=09nV=02jG=05=#");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-  myRequest.set_username("vmreyes");
+  myRequest.set_username("jghoang");
 }
 
 void loop() {
@@ -427,12 +428,6 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = VIDEO;
       break;
     case VIDEO: //takes video
-      //
-      // Maybe have a separate state that actually records video,
-      // while this state waits for a button hold
-      // (video would only record while the button is held, or for a certain max length)
-      //video will be recorded by a certain max length
-      //delay(1000);
       content = true;
       Time_pressed = millis();   //gives user option to upload or go back home
       state = TO_SELECT;
