@@ -114,6 +114,49 @@ void RequestSender::generate_video_request_header(char* img_ptr, char* audio_ptr
           strlen(intermediate1) + strlen(img_ptr) + strlen(intermediate2) + strlen(audio_ptr));
 }
 
+char RequestSender::get_users(char* users_available) {
+  int response_size = out_buffer_size;
+  int response_timeout = 6000;
+  bool serial = true;
+  char request_header[400];
+  //for reference  myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
+
+  sprintf(request_header, "GET %s?menu=%s HTTP/1.1\r\n", destination, "True");
+  sprintf(request_header + strlen(request_header), "Host: %s\r\n", host);
+  strcat(request_header, "\r\n"); //add blank line!
+
+  WiFiClient client; //instantiate a client object
+  if (client.connect(host, 80)) { //try to connect to host on port 80
+    if (serial) Serial.print(request_header);//Can do one-line if statements in C without curly braces
+    client.print(request_header);
+    memset(response, 0, response_size); //Null out (0 is the value of the null terminator '\0') entire buffer
+    uint32_t count = millis();
+    while (client.connected()) { //while we remain connected read out data coming back
+      client.readBytesUntil('\n', response, response_size);
+      if (serial) Serial.println(response);
+      if (strcmp(response, "\r") == 0) { //found a blank line!
+        break;
+      }
+      memset(response, 0, response_size);
+      if (millis() - count > response_timeout) break;
+    }
+    memset(response, 0, response_size);
+    count = millis();
+    while (client.available()) { //read out remaining text (body of response)
+      char_append(response, client.read(), response_size);
+    }
+    if (serial) Serial.println(response);
+    client.stop();
+    if (serial) Serial.println("-----------");
+  } else {
+    if (serial) Serial.println("connection FAILED :/");
+    if (serial) Serial.println("wait 0.5 sec...");
+    client.stop();
+  }
+  memset(users_available, NULL, 60);
+  strncpy(users_available, response, 60);
+}
+
 void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
   bool serial = true;
   int response_size = out_buffer_size;
