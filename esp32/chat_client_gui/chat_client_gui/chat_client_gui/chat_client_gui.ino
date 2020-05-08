@@ -99,10 +99,13 @@ void setup() {
 
   myCam.setup();
 
-  myRequest.begin_wifi("2WIRE782", "4532037186");
+//  myRequest.begin_wifi("2WIRE782", "4532037186");
+//  myRequest.set_username("vmreyes");
+  myRequest.begin_wifi("HoangSPB6-2G", "sU=09nV=02jG=05=#");
+  myRequest.set_username("jghoang");
+  
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-  myRequest.set_username("vmreyes");
 }
 
 void loop() {

@@ -11,8 +11,8 @@ void Camera::setup(){
   pinMode(CS,OUTPUT);
   Wire.begin();
   Serial.println(F("ArduCAM Start!"));
-  //SPI.begin();
-  //SPI.setFrequency(4000000); //4MHz
+  SPI.begin();
+  SPI.setFrequency(4000000); //4MHz
 
   arduCam.write_reg(ARDUCHIP_TEST1, 0x55);
   temp = arduCam.read_reg(ARDUCHIP_TEST1);
@@ -62,4 +62,3 @@ void Camera::start_capture(){
     arduCam.clear_fifo_flag();
     arduCam.start_capture();
 }
-
