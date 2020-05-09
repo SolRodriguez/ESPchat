@@ -28,10 +28,10 @@ void RequestSender::begin_wifi(char* network, char* password) {
     Serial.println(WiFi.status());
     ESP.restart();
   }
-  char test[5];
-  base64_decode(test, "YWJj",4);
+  // char test[5];
+  // base64_decode(test, "YWJj",4);
   // Serial.println('buffer1');
-  Serial.println(test);
+  // Serial.println(test);
   // Serial.println('buffer1');
 }
 

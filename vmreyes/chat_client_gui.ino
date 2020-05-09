@@ -252,8 +252,11 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = PLAYBACK;
       break;
     case PLAYBACK: //playback
-      playback(video, audio);
-      content = true;
+      if (!content){
+        tft.drawString("No video...", 0, 40, 1);
+        delay(1000);
+      }
+      else playback(video, audio);
       state = TO_SELECT;
       break;
 
@@ -294,20 +297,21 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.fillScreen(BACKGROUND);
       Serial.println("GET_VIDEO");
       if (user_is_selected == false) {
+        tft.drawString("No selected user", 0, 40, 1);
+        delay(1000);
         timer = millis();
         state = TO_RESET;
       }
-      tft.setCursor(0, 40, 1);
-      tft.print("Sending GET request to get user's images");
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
+      tft.drawString("Loading video...", 0, 40, 1);
       state = GET_VIDEO;
       break;
     case GET_VIDEO: 
-      // GET request here?
+      myRequest.get_video(selected_user, video, audio);
+      content = true;
       timer = millis(); //time_pressed should be resetted
-      delay(2000);
       user_is_selected = false;
-      state = TO_MAIN_MENU;
+      sprintf(selected_user, "");
+      state = TO_PLAYBACK;
       break;
 
     case TO_RESET:
