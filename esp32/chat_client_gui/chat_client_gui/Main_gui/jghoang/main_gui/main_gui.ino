@@ -72,7 +72,7 @@ uint32_t max_time_to_record = 3000; // 3 secs of recording //delete later on
 uint32_t time_temp;  ///delete
 
 uint8_t state;
-
+const uint8_t SECONDS = 4;
 uint8_t current_choice; // used for UI menu selection
 
 // timer stuff
@@ -80,23 +80,27 @@ uint32_t Time_pressed;
 uint32_t timer;
 
 // user stuff
-bool selected_user = false;
+bool user_selected = false;
 bool content = false;
-bool menu;
+//bool menu;
+char user_selection_text[50]; //function below
 
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
 char user_name[10];
-
+char users_available[50];
+int selected;
+char menu[sizeof(users_available)];
+char *selected_user;
 //Kim's WiFi
 //char network[] = "ATT8s7N3kF";
 //char password[] = "6trp7q?vtm3a";
 //char host[] = "608dev-2.net";
 
-char users_available[30];
+
 char download_user_data[2000];///////////////
 int num = 0;
-char output[100] = {}; 
+char output[100] = {};
 
 
 const int MAX = 5;
@@ -122,11 +126,10 @@ void setup() {
 
   //Original from set-up camera_test
 
-//  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
-  myRequest.begin_wifi("HoangSPB6-2G", "sU=09nV=02jG=05=#");
+  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-  myRequest.set_username("jghoang");
+  myRequest.set_username("vmreyes");
 }
 
 void loop() {
@@ -333,16 +336,15 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_STATE4:
       Serial.println("IN STATE4");
       tft.fillScreen(BACKGROUND);
-      menu = true;
+      // Get user menu
+      // menu = true;
       myRequest.get_users(users_available);
 
-      Serial.println(sizeof(users_available));
       for (int i = 0; i < sizeof(users_available); i++) {
         if (users_available[i] == '\n') {
           num++;
         }
       }
-      Serial.println(num);
       state = STATE4;
       break;
 
@@ -353,6 +355,29 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       /*
          section needs upgrading
       */
+      myRequest.get_users(users_available);
+
+      //      strcpy(menu, users_available);
+
+
+      //      Serial.println("*********");
+      //      menu = myRequest.get_users(users_available);
+      //      Serial.println(menu);
+      //      display_menu(menu);
+
+
+      //      if (left_button.update() == 1) { //scroll thru user options
+      //        selected = (selected + 1) % num;
+      //      }
+      //      if (right_button.update() == 1) { //luser selected
+      //        tokenize(menu, selected);
+      //        tft.fillScreen(BACKGROUND);
+      //      }
+
+
+
+
+
       users(num);
 
       if (num == 1) {
@@ -382,23 +407,10 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       delay(2000);
 
-      selected_user = true;
+      user_selected = true;
       Time_pressed = millis();
       state = TO_USER_MENU;
       break;
-
-    //      tft.setCursor(0, 40, 1);
-    //      tft.print("b1 - clicking through a list of user's");   // or is a new user returned to us... and we confirm them by going into state 5//
-    //      tft.setCursor(0, 80, 1);
-    //      tft.print("b2 - once done --> user menu");
-    //      //iterate throughout options
-    //      //must display options of users..
-    //      selected_user = true;
-    //      Time_pressed = millis();   /// restart timeer to have the option to leave or see post//
-    //      //go back to state 3 --> button2 == 0
-    //      if (b2 == 0) { //go back to state3  //b1==0//
-    //        state = TO_USER_MENU;
-    //      }
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
@@ -428,6 +440,12 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = VIDEO;
       break;
     case VIDEO: //takes video
+      //
+      // Maybe have a separate state that actually records video,
+      // while this state waits for a button hold
+      // (video would only record while the button is held, or for a certain max length)
+      //video will be recorded by a certain max length
+      //delay(1000);
       content = true;
       Time_pressed = millis();   //gives user option to upload or go back home
       state = TO_SELECT;
@@ -456,14 +474,14 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_STATE8:
       tft.fillScreen(BACKGROUND);
       Serial.println("Selected user");
-      if (selected_user == false) {
+      if (user_selected == false) {
         timer = millis();
         tft.drawString("need to select a user", 0, 80, 2);
         state = TO_RESET;
       }
 
       else {
-        menu = false;
+        //menu = false;
         tft.setCursor(0, 40, 1);
         tft.print("Sending GET request to get user's images");
         tft.drawString("DUMMY SCREEN", 0, 80, 2);
@@ -472,7 +490,11 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       break;
     case STATE8: //user selected
       // GET request here?
-  //    user_name = (char*)"solr";  // the user's data we want to see,,link to state 4
+      //    user_name = (char*)"solr";  // the user's data we want to see,,link to state 4
+
+      //playback
+      //      playback(video, audio);
+
       strcpy(user_name, "solr");  //
       myRequest.download_data(user_name, download_user_data);
       Serial.println("*********");
@@ -481,7 +503,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
       timer = millis(); //time_pressed should be resetted
       delay(2000);
-      selected_user = false;
+      user_selected = false;
       state = TO_MAIN_MENU;
       break;
 
@@ -491,7 +513,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      selected_user = false;
+      user_selected = false;
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
@@ -558,13 +580,70 @@ void record() {
 }
 
 void recordCode(void* parameters) {
-  while (true) {
-    mic.on_update();
-    delayMicroseconds(75);
+  mic.start_recording(SECONDS * 8000);
+  bool recording_ = true;
+  while (recording_)
+  {
+    recording_ = !mic.on_update();
   }
+  vTaskDelete(NULL);
 }
 
+//void playback(uint8_t *video, uint8_t *audio)
+//{
+//  int mil_timer = millis();
+//  int mic_timer = micros();
+//
+//  int frames = 0;
+//  int a_ind = 0;
+//
+//  tft.pushImage(30, 60, 80, 60, video);
+//  dacWrite(25, audio[0]);
+//  while (frames < SECONDS)
+//  {
+//    if (millis() - mil_timer >= 1000)
+//    {
+//      tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
+//      frames++;
+//      mil_timer = millis();
+//    }
+//    if (micros() - mic_timer >= 125)
+//    {
+//      dacWrite(25, audio[a_ind]);
+//      a_ind++;
+//      mic_timer = micros();
+//    }
+//  }
+//}
 
+//void display_menu(char menu)
+//{
+//  tft.setCursor(0, 0, 1);
+//  tft.println("Select a user:");
+//  tft.println(menu);
+//  char user_selection_text[50];
+//  sprintf(user_selection_text, "Current selection: %u", selected + 1);
+//  tft.print(user_selection_text);
+//}
+
+//void tokenize(char menu, int selection)
+//{
+//  if (selection == 1)
+//  {
+//    char *selected_user = strtok(menu, "\n");
+//  }
+//  else if (selection > 1)
+//  {
+//    selected_user = strtok(menu, "\n");
+//    int8_t ctr = 0;
+//    while (ctr < selection)
+//    {
+//      selected_user = strtok(NULL, ",");
+//      ctr ++;
+//    }
+//
+//  }
+//}
 
 void users(int num) {
   if (num == 1) {

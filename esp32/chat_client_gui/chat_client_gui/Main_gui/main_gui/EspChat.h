@@ -26,22 +26,22 @@ class Camera
 };
 
 
-//class Button
-//{
-//  public:
-//  uint32_t t_of_state_2;
-//  uint32_t t_of_button_change;    
-//  uint32_t debounce_time;
-//  uint32_t long_press_time;
-//  uint8_t pin;
-//  uint8_t flag;
-//  bool button_pressed;
-//  uint8_t state;
-//  
-//  Button(int p);
-//  void read();
-//  int update();
-//};
+class Button
+{
+  public:
+  uint32_t t_of_state_2;
+  uint32_t t_of_button_change;    
+  uint32_t debounce_time;
+  uint32_t long_press_time;
+  uint8_t pin;
+  uint8_t flag;
+  bool button_pressed;
+  uint8_t state;
+  
+  Button(int p);
+  void read();
+  int update();
+};
 
 
 class Microphone{
@@ -86,7 +86,7 @@ class RequestSender
     void send_video(char* img_ptr, char* audio_ptr);
     void set_username(char* username_);
 
-    void get_users(char* users_available); 
+    char get_users(char* users_available); 
     void download_data(char* user_name, char* download_user_data);
   private:
     uint8_t char_append(char* buff, char c, uint16_t buff_size);

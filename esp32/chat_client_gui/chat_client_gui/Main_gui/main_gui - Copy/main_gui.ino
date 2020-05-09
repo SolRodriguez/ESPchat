@@ -1,18 +1,15 @@
-#include <Arduino.h>
-#include <WiFi.h> //Connect to WiFi Network
-#include <SPI.h>
-#include <string.h>
-#include "Button.h"
-#include "RequestSender.h"
-#include <esp_task_wdt.h>
-#include "amicrophone_class.h"
+//Originals from chat_client_gui
+//#include <WiFi.h> //Connect to WiFi Network
 
+#include <SPI.h>
+#include <TFT_eSPI.h>
+#include <string.h>
+
+//Original from camera_test
+#include "EspChat.h"
 #include <ArduCAM.h>
 #include "memorysaver.h"
-#include "Camera.h"
-
-#include <TFT_eSPI.h>
-
+#include <Arduino.h>
 
 //Original code from chat_client_gui
 // State stuff
@@ -54,15 +51,14 @@
 #define TEXT_COLOR TFT_RED
 #define CURSOR_COLOR TFT_BLUE
 
-const uint8_t SECONDS = 4;
+TFT_eSPI tft = TFT_eSPI();
 
-uint8_t video[80*60*SECONDS];
-uint8_t audio[8000*SECONDS];
+uint8_t video[80 * 60 * 3];
+uint8_t audio[8000 * 2];
 
 Camera myCam;
 RequestSender myRequest;
-TFT_eSPI tft = TFT_eSPI();
-Microphone mic = Microphone(36,8000,audio);
+Microphone mic(36, 8000, audio);
 TaskHandle_t recordTask;
 
 const uint8_t INPUT_PIN1 = 16; //pin connected to button
@@ -71,22 +67,53 @@ const uint8_t INPUT_PIN2 = 5; //pin connected to button
 Button left_button(INPUT_PIN1);
 Button right_button(INPUT_PIN2);
 
-uint8_t state;
+//temps for video recording'''
+uint32_t max_time_to_record = 3000; // 3 secs of recording //delete later on
+uint32_t time_temp;  ///delete
 
+uint8_t state;
+const uint8_t SECONDS = 4;
 uint8_t current_choice; // used for UI menu selection
 
-uint32_t Time_pressed; // timer
+// timer stuff
+uint32_t Time_pressed;
 uint32_t timer;
 
-bool selected_user = false; // user selections
+// user stuff
+bool user_selected = false;
 bool content = false;
+//bool menu;
+char user_selection_text[50]; //function below
 
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
+char user_name[10];
+char users_available[50];
+int selected;
+char menu[sizeof(users_available)];
+char *selected_user;
+//Kim's WiFi
+//char network[] = "ATT8s7N3kF";
+//char password[] = "6trp7q?vtm3a";
+//char host[] = "608dev-2.net";
+
+
+char download_user_data[2000];///////////////
+int num = 0;
+char output[100] = {};
+
+
+const int MAX = 5;
+
+char user1[10];
+char user2[10];
+char user3[10];
+char user4[10];
+char user5[10];
 
 void setup() {
   //Original set-up from chat_client_gui
-  Serial.begin(115200); 
+  Serial.begin(115200); //for debugging if needed.
   tft.init();
   tft.setRotation(2);
   tft.setTextSize(1);
@@ -97,9 +124,9 @@ void setup() {
   state = TO_MAIN_MENU;
   current_choice = 0;
 
-  myCam.setup();
+  //Original from set-up camera_test
 
-  myRequest.begin_wifi("2WIRE782", "4532037186");
+  myRequest.begin_wifi("ATT8s7N3kF", "6trp7q?vtm3a");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
   myRequest.set_username("vmreyes");
@@ -118,6 +145,7 @@ void loop() {
   }
 
   fsm(left_flag, right_flag);
+
 }
 
 void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
@@ -177,7 +205,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.fillScreen(BACKGROUND);
       current_choice = 0;
       tft.drawString("TAKE PIC OR VID", 15, 0, 2);
-      tft.drawString("Playback", 30, 60, 2);
+      tft.drawString("Take photo", 30, 60, 2);
       tft.drawString("Take video", 30, 80, 2);
       tft.drawString("Upload", 30, 100, 2);
       tft.drawString("Main Menu", 30, 120, 2);
@@ -195,7 +223,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
             case 2: break;
           }
 
-          
+
           switch (right_flag) {
             case 0: break;
             case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 1; break;
@@ -308,47 +336,106 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_STATE4:
       Serial.println("IN STATE4");
       tft.fillScreen(BACKGROUND);
+      // Get user menu
+      // menu = true;
+      myRequest.get_users(users_available);
+
+      for (int i = 0; i < sizeof(users_available); i++) {
+        if (users_available[i] == '\n') {
+          num++;
+        }
+      }
       state = STATE4;
       break;
+
+
     case STATE4://change user option
       tft.setCursor(0, 40, 1);
-      tft.print("Choose users here");
-      myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-      myRequest.set_host("608dev-2.net");
-      myRequest.get_video("vmreyes", video, audio);
-      playback(video, audio);
+      //tft.print("Choose users here");
+      /*
+         section needs upgrading
+      */
+      myRequest.get_users(users_available);
+
+      //      strcpy(menu, users_available);
+
+
+      //      Serial.println("*********");
+      //      menu = myRequest.get_users(users_available);
+      //      Serial.println(menu);
+      //      display_menu(menu);
+
+
+      //      if (left_button.update() == 1) { //scroll thru user options
+      //        selected = (selected + 1) % num;
+      //      }
+      //      if (right_button.update() == 1) { //luser selected
+      //        tokenize(menu, selected);
+      //        tft.fillScreen(BACKGROUND);
+      //      }
+
+
+
+
+
+      users(num);
+
+      if (num == 1) {
+        tft.drawString(user1, 5, 20, 2);
+      }
+      if (num == 2) {
+        tft.drawString(user1, 5, 20, 2);
+        tft.drawString(user2, 5, 40, 2);
+      }
+      if (num == 3) {
+        tft.drawString(user1, 5, 20, 2);
+        tft.drawString(user2, 5, 40, 2);
+        tft.drawString(user3, 5, 60, 2);
+      }
+      if (num == 4) {
+        tft.drawString(user1, 5, 20, 2);
+        tft.drawString(user2, 5, 40, 2);
+        tft.drawString(user3, 5, 60, 2);
+        tft.drawString(user4, 5, 80, 2);
+      }
+      if (num == 5) {
+        tft.drawString(user1, 5, 20, 2);
+        tft.drawString(user2, 5, 40, 2);
+        tft.drawString(user3, 5, 60, 2);
+        tft.drawString(user4, 5, 80, 2);
+        tft.drawString(user5, 5, 100, 2);
+      }
       delay(2000);
-      selected_user = true;
+
+      user_selected = true;
       Time_pressed = millis();
       state = TO_USER_MENU;
       break;
-    //      tft.setCursor(0, 40, 1);
-    //      tft.print("b1 - clicking through a list of user's");   // or is a new user returned to us... and we confirm them by going into state 5//
-    //      tft.setCursor(0, 80, 1);
-    //      tft.print("b2 - once done --> user menu");
-    //      //iterate throughout options
-    //      //must display options of users..
-    //      selected_user = true;
-    //      Time_pressed = millis();   /// restart timeer to have the option to leave or see post//
-    //      //go back to state 3 --> button2 == 0
-    //      if (b2 == 0) { //go back to state3  //b1==0//
-    //        state = TO_USER_MENU;
-    //      }
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
+      myCam.setup();  //moved it here,  since it SPI interfers with the main menu display on lcd making it go blank-k
+      tft.drawString("Taking a picture....", 0, 40, 1);
+      tft.drawString("DUMMY SCREEN", 0, 80, 2);
       state = IMAGE;
       break;
-      
-    case IMAGE: //playback
-      playback(video, audio);
+
+    case IMAGE: //takes picture
+      delay(1200);
+      Serial.println("GETTING image");
+      myCam.capture();
+      // Magical picture-taking code courtesy of Victor
+      //
+
       content = true;
+      Serial.println("BACK");
       state = TO_SELECT;
       break;
 
     case TO_VIDEO:
       tft.fillScreen(BACKGROUND);
       tft.drawString("Taking a video....", 0, 40, 1);
+      tft.drawString("DUMMY SCREEN", 0, 80, 2);
       record();
       state = VIDEO;
       break;
@@ -357,8 +444,8 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       // Maybe have a separate state that actually records video,
       // while this state waits for a button hold
       // (video would only record while the button is held, or for a certain max length)
-      //
-      delay(1000);
+      //video will be recorded by a certain max length
+      //delay(1000);
       content = true;
       Time_pressed = millis();   //gives user option to upload or go back home
       state = TO_SELECT;
@@ -373,8 +460,6 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       else {
         tft.drawString("Uploading content....", 0, 40, 1);
-        myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-        myRequest.set_host("608dev-2.net");
         myRequest.send_video((char*) video, (char*) audio);
         state = UPLOAD;
       }
@@ -389,20 +474,36 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_STATE8:
       tft.fillScreen(BACKGROUND);
       Serial.println("Selected user");
-      if (selected_user == false) {
+      if (user_selected == false) {
         timer = millis();
+        tft.drawString("need to select a user", 0, 80, 2);
         state = TO_RESET;
       }
-      tft.setCursor(0, 40, 1);
-      tft.print("Sending GET request to get user's images");
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
-      state = STATE8;
+
+      else {
+        //menu = false;
+        tft.setCursor(0, 40, 1);
+        tft.print("Sending GET request to get user's images");
+        tft.drawString("DUMMY SCREEN", 0, 80, 2);
+        state = STATE8;
+      }
       break;
     case STATE8: //user selected
       // GET request here?
+      //    user_name = (char*)"solr";  // the user's data we want to see,,link to state 4
+
+      //playback
+      //      playback(video, audio);
+
+      strcpy(user_name, "solr");  //
+      myRequest.download_data(user_name, download_user_data);
+      Serial.println("*********");
+      Serial.println(download_user_data);  //data from Sol's server code when menu!= true
+
+
       timer = millis(); //time_pressed should be resetted
       delay(2000);
-      selected_user = false;
+      user_selected = false;
       state = TO_MAIN_MENU;
       break;
 
@@ -412,7 +513,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      selected_user = false; ////adeddd///
+      user_selected = false;
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
@@ -438,65 +539,184 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 }
 
 
-void record(){
+
+
+void record() {
   int k = 0;
   xTaskCreatePinnedToCore(
-      recordCode, /* Function to implement the task */
-      "Recording Task", /* Name of the task */
-      10000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      5,  /* Priority of the task */
-      &recordTask,  /* Task handle. */
-      0); /* Core where the task should run */
+    recordCode, /* Function to implement the task */
+    "Recording Task", /* Name of the task */
+    10000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    5,  /* Priority of the task */
+    &recordTask,  /* Task handle. */
+    0); /* Core where the task should run */
+  mic.start_recording(2 * 1600);
 
-  for(int frames = 0; frames < SECONDS; frames++){
+  for (int frames = 0; frames < 3; frames++) {
     myCam.capture();
-    for(int i = 0; i < 240; i++){
-      for(int j = 0; j < 320; j++){
+    for (int i = 0; i < 240; i++) {
+      for (int j = 0; j < 320; j++) {
         uint8_t hv = SPI.transfer(0x00);
         uint8_t hl = SPI.transfer(0x00);
-        if(!(i % 4) && !(j % 4)){
+        if (!(i % 4) && !(j % 4)) {
           uint16_t pixel_val = hv << 8 | hl;
-          uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
-          if(pixel_data == 0x00){
+          uint8_t pixel_data = ((pixel_val & 0xE000) >> 8) | ((pixel_val & 0x0700) >> 6) | ((pixel_val & 0x0018) >> 3);
+          if (pixel_data == 0x00) {
             pixel_data += 36;
           }
           video[k++] = pixel_data;
         }
       }
     }
-    tft.pushImage(30,60,80,60,video+frames*60*80);
+    tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
+  }
+  vTaskDelete(recordTask);
+
+  Serial.println("first 10 of vid and audio");
+  for (int i = 0; i < 10; i++) {
+    Serial.printf("%d %d\n", video[i], audio[i]);
   }
 }
 
-void recordCode(void* parameters){
-  mic.start_recording(SECONDS*8000);
+void recordCode(void* parameters) {
+  mic.start_recording(SECONDS * 8000);
   bool recording_ = true;
-  while(recording_){
+  while (recording_)
+  {
     recording_ = !mic.on_update();
   }
   vTaskDelete(NULL);
 }
 
-void playback(uint8_t* video, uint8_t* audio) {
-  int mil_timer = millis();
-  int mic_timer = micros();
+//void playback(uint8_t *video, uint8_t *audio)
+//{
+//  int mil_timer = millis();
+//  int mic_timer = micros();
+//
+//  int frames = 0;
+//  int a_ind = 0;
+//
+//  tft.pushImage(30, 60, 80, 60, video);
+//  dacWrite(25, audio[0]);
+//  while (frames < SECONDS)
+//  {
+//    if (millis() - mil_timer >= 1000)
+//    {
+//      tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
+//      frames++;
+//      mil_timer = millis();
+//    }
+//    if (micros() - mic_timer >= 125)
+//    {
+//      dacWrite(25, audio[a_ind]);
+//      a_ind++;
+//      mic_timer = micros();
+//    }
+//  }
+//}
 
-  int frames = 0;
-  int a_ind = 0;
+//void display_menu(char menu)
+//{
+//  tft.setCursor(0, 0, 1);
+//  tft.println("Select a user:");
+//  tft.println(menu);
+//  char user_selection_text[50];
+//  sprintf(user_selection_text, "Current selection: %u", selected + 1);
+//  tft.print(user_selection_text);
+//}
 
-  tft.pushImage(30, 60, 80, 60, video);
-  dacWrite(25, audio[0]);
-  while (frames < SECONDS) {
-    if (millis() - mil_timer >= 1000) {
-      tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
-      frames++;
-      mil_timer = millis();
-    }
-    if (micros() - mic_timer >= 125) {
-      dacWrite(25, audio[a_ind]);
-      a_ind++;
-      mic_timer = micros();
-    }
+//void tokenize(char menu, int selection)
+//{
+//  if (selection == 1)
+//  {
+//    char *selected_user = strtok(menu, "\n");
+//  }
+//  else if (selection > 1)
+//  {
+//    selected_user = strtok(menu, "\n");
+//    int8_t ctr = 0;
+//    while (ctr < selection)
+//    {
+//      selected_user = strtok(NULL, ",");
+//      ctr ++;
+//    }
+//
+//  }
+//}
+
+void users(int num) {
+  if (num == 1) {
+    char *ptr = strtok(users_available, "\n");
+    strcpy(user1, ptr);
+    Serial.println("first user");
+    Serial.println(user1);
+  }
+
+  if (num == 2) {
+    char *ptr = strtok(users_available, "\n");
+    strcpy(user1, ptr);
+    Serial.println("first user");
+    Serial.println(user1);
+    ptr = strtok(NULL, "\n");
+    strcpy(user2, ptr);
+    Serial.println("second user");
+    Serial.println(user2);
+  }
+
+  if (num == 3) {
+    char *ptr = strtok(users_available, "\n");
+    strcpy(user1, ptr);
+    Serial.println("first user");
+    Serial.println(user1);
+    ptr = strtok(NULL, "\n");
+    strcpy(user2, ptr);
+    Serial.println("second user");
+    Serial.println(user2);
+    ptr = strtok(NULL, "\n");
+    strcpy(user3, ptr);
+    Serial.println("third user");
+    Serial.println(user3);
+  }
+
+  if (num == 4) {
+    char *ptr = strtok(users_available, "\n");
+    strcpy(user1, ptr);
+    Serial.println("first user");
+    Serial.println(user1);
+    ptr = strtok(NULL, "\n");
+    strcpy(user2, ptr);
+    Serial.println("second user");
+    Serial.println(user2);
+    ptr = strtok(NULL, "\n");
+    strcpy(user3, ptr);
+    Serial.println("third user");
+    Serial.println(user3);
+    ptr = strtok(NULL, "\n");
+    strcpy(user4, ptr);
+    Serial.println("4th user");
+    Serial.println(user4);
+  }
+  if (num == 5) {
+    char *ptr = strtok(users_available, "\n");
+    strcpy(user1, ptr);
+    Serial.println("first user");
+    Serial.println(user1);
+    ptr = strtok(NULL, "\n");
+    strcpy(user2, ptr);
+    Serial.println("second user");
+    Serial.println(user2);
+    ptr = strtok(NULL, "\n");
+    strcpy(user3, ptr);
+    Serial.println("third user");
+    Serial.println(user3);
+    ptr = strtok(NULL, "\n");
+    strcpy(user4, ptr);
+    Serial.println("4th user");
+    Serial.println(user4);
+    ptr = strtok(NULL, "\n");
+    strcpy(user5, ptr);
+    Serial.println("5th user");
+    Serial.println(user5);
   }
 }

@@ -151,6 +151,7 @@ void Button::read() {
 
 int Button::update() {
   read();
+
   flag = 0;
   switch (state) {
     case 0:
@@ -316,11 +317,12 @@ void RequestSender::generate_video_request_header(char* img_ptr, char* audio_ptr
           strlen(intermediate1) + strlen(img_ptr) + strlen(intermediate2) + strlen(audio_ptr));
 }
 
-void RequestSender::get_users(char* users_available) {
+char RequestSender::get_users(char* users_available) {
   int response_size = out_buffer_size;
   int response_timeout = 6000;
   bool serial = true;
   char request_header[400];
+  //for reference  myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
 
   sprintf(request_header, "GET %s?menu=%s HTTP/1.1\r\n", destination, "True");
   sprintf(request_header + strlen(request_header), "Host: %s\r\n", host);
