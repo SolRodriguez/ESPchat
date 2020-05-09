@@ -28,8 +28,8 @@
 #define TO_USER_MENU 6
 #define USER_MENU 7
 
-#define TO_STATE4 8
-#define STATE4 9
+#define TO_USER_SEL 8
+#define USER_SEL 9
 
 #define TO_IMAGE 10
 #define IMAGE 11
@@ -46,8 +46,6 @@
 #define TO_RESET 18
 #define RESET 19
 
-#define TO_USER_CHANGE 20
-#define USER_CHANGE 21
 
 // Color stuff
 #define BACKGROUND TFT_BLACK
@@ -78,11 +76,17 @@ uint8_t current_choice; // used for UI menu selection
 uint32_t Time_pressed; // timer
 uint32_t timer;
 
-bool selected_user = false; // user selections
+bool user_is_selected = false; // user selections
+char selected_user[10] = "";
+char users_available[50];
 bool content = false;
+int num_users = 0;
+char user_list[5][10];
 
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
+
+
 
 void setup() {
   //Original set-up from chat_client_gui
@@ -99,10 +103,12 @@ void setup() {
 
   myCam.setup();
 
-  myRequest.begin_wifi("2WIRE782", "4532037186");
+  // myRequest.begin_wifi("2WIRE782", "4532037186");
+  // myRequest.set_username("vmreyes");
+  myRequest.begin_wifi("HoangSPB6-2G", "sU=09nV=02jG=05=#");
+  myRequest.set_username("jghoang");
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-  myRequest.set_username("vmreyes");
 }
 
 void loop() {
@@ -259,6 +265,9 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = USER_MENU;
       break;
     case USER_MENU: //USER menu options
+      tft.drawString("Current User:", 30, 30, 1);
+      if (strcmp(selected_user, "") == 0) tft.drawString("NONE", 30, 40, 1);
+      else tft.drawString(selected_user, 30, 40, 1);
       switch (current_choice) {
         case 0:
           // HOVER OVER "Change users"
@@ -271,7 +280,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
           switch (right_flag) {
             case 0: break;
             case 1: tft.drawRect(15, 78, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: state = TO_USER_CHANGE; break; // TO USER_CHANGE
+            case 2: state = TO_USER_SEL; break; 
           }
           break; // out of case 1
         case 1:
@@ -305,35 +314,53 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       break; // out of switch(current_choice)
 
-    case TO_STATE4:
-      Serial.println("IN STATE4");
+    case TO_USER_SEL:
+      Serial.println("IN USER_SEL");
       tft.fillScreen(BACKGROUND);
-      state = STATE4;
+      current_choice = 0;
+      tft.drawString("USER SELECT", 25, 0, 2);
+      tft.drawString("Loading...", 25, 20, 2);
+      display_bottom_ui("UP", "DOWN", "------", "CONFIRM");
+      //obtain users with past history posts
+      myRequest.get_users(users_available);
+
+      for (int i = 0; i < 5; i++) {
+        memset(user_list[i], 0, 10);
+      }
+      tokenize(users_available, user_list);
+
+
+      num_users = 0;
+      for (int i = 0; i < 5; i++) {
+        if (strcmp(user_list[i], "") != 0) {
+          num_users++;
+        }
+      }
+
+      tft.fillRect(0, 20, 128, 20, BACKGROUND);
+
+      Serial.println(num_users);
+      for (int i = 0; i < num_users; i++) {
+        tft.drawString(user_list[i], 25, 30 + 20 * i, 2);
+      }
+      current_choice = 0;
+      state = USER_SEL;
       break;
-    case STATE4://change user option
-      tft.setCursor(0, 40, 1);
-      tft.print("Choose users here");
-      myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-      myRequest.set_host("608dev-2.net");
-      myRequest.get_video("vmreyes", video, audio);
-      playback(video, audio);
-      delay(2000);
-      selected_user = true;
-      Time_pressed = millis();
-      state = TO_USER_MENU;
+
+
+    case USER_SEL://change user option
+      tft.drawRect(15, 28 + 20 * current_choice, 98, 20, CURSOR_COLOR);
+      switch (left_flag) {
+        case 0: break;
+        case 1: tft.drawRect(15, 28 + 20 * current_choice, 98, 20, BACKGROUND); if (current_choice == 0) current_choice = num_users - 1; else current_choice --;  break;
+        case 2: break;
+      }
+      switch (right_flag) {
+        case 0: break;
+        case 1: tft.drawRect(15, 28 + 20 * current_choice, 98, 20, BACKGROUND); current_choice ++; if (current_choice >= num_users) current_choice = 0; break;
+        case 2: user_is_selected = true; sprintf(selected_user, user_list[current_choice]); Time_pressed = millis(); state = TO_USER_MENU; break;
+      }
       break;
-    //      tft.setCursor(0, 40, 1);
-    //      tft.print("b1 - clicking through a list of user's");   // or is a new user returned to us... and we confirm them by going into state 5//
-    //      tft.setCursor(0, 80, 1);
-    //      tft.print("b2 - once done --> user menu");
-    //      //iterate throughout options
-    //      //must display options of users..
-    //      selected_user = true;
-    //      Time_pressed = millis();   /// restart timeer to have the option to leave or see post//
-    //      //go back to state 3 --> button2 == 0
-    //      if (b2 == 0) { //go back to state3  //b1==0//
-    //        state = TO_USER_MENU;
-    //      }
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
@@ -389,7 +416,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_STATE8:
       tft.fillScreen(BACKGROUND);
       Serial.println("Selected user");
-      if (selected_user == false) {
+      if (user_is_selected == false) {
         timer = millis();
         state = TO_RESET;
       }
@@ -402,7 +429,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       // GET request here?
       timer = millis(); //time_pressed should be resetted
       delay(2000);
-      selected_user = false;
+      user_is_selected = false;
       state = TO_MAIN_MENU;
       break;
 
@@ -412,27 +439,11 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      selected_user = false; ////adeddd///
+      user_is_selected = false; ////adeddd///
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
       break;
-
-    case TO_USER_CHANGE:
-      Serial.println("IN STATE 10");
-      tft.fillScreen(BACKGROUND);
-      tft.drawString("Choosing user...", 0, 40, 1);
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
-      timer = millis();
-      state = USER_CHANGE;
-      break;
-    case USER_CHANGE:
-      state = TO_STATE4;
-      // I'm unsure of what's supposed to be going on here - juju
-
-      //      if (b2 == 1 && b1 == 1 && millis() - timer < LONG_TIMEOUT) {
-      //        state = TO_STATE4;
-      //      }
 
   } // end of switch(state)
 }
@@ -498,5 +509,16 @@ void playback(uint8_t* video, uint8_t* audio) {
       a_ind++;
       mic_timer = micros();
     }
+  }
+}
+
+void tokenize(char* menu, char  user_list[][10]) {
+  Serial.println("IN ANOTHER TOKENIZe");
+  char* temp = strtok(menu, "\n");
+  int index = 0;
+  while (temp != NULL) {
+    sprintf(user_list[index], temp);
+    temp = strtok(NULL, "\n");
+    index++;
   }
 }
