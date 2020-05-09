@@ -31,8 +31,8 @@
 #define TO_USER_SEL 8
 #define USER_SEL 9
 
-#define TO_IMAGE 10
-#define IMAGE 11
+#define TO_PLAYBACK 10
+#define PLAYBACK 11
 
 #define TO_VIDEO 12
 #define VIDEO 13
@@ -40,8 +40,8 @@
 #define TO_UPLOAD 14
 #define UPLOAD 15
 
-#define TO_STATE8 16
-#define STATE8 17
+#define TO_GET_VIDEO 16
+#define GET_VIDEO 17
 
 #define TO_RESET 18
 #define RESET 19
@@ -116,25 +116,19 @@ void loop() {
   uint8_t left_flag = left_button.update();
   uint8_t right_flag = right_button.update();
 
-  // Testing
+  // // Testing
   char output[100];
-  if (left_flag != 0 or right_flag != 0) {
-    sprintf(output, "%d, %d", left_flag, right_flag);
-    Serial.println(output);
-  }
+  // if (left_flag != 0 or right_flag != 0) {
+  //   sprintf(output, "%d, %d", left_flag, right_flag);
+  //   Serial.println(output);
+  // }
 
   fsm(left_flag, right_flag);
 }
 
-void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
-  tft.drawLine(0, 138, 128, 138, TFT_WHITE);
-  tft.drawString(label_1, 5, 140, 1); tft.drawString(label_2, 69, 140, 1);
-  tft.drawString(label_3, 5, 150, 1); tft.drawString(label_4, 69, 150, 1);
-}
 
 void fsm(uint8_t left_flag, uint8_t right_flag) {
   switch (state) {
-
     case TO_MAIN_MENU: // lead-in to MAIN MENU
       Serial.println("MAIN MENU");
       tft.fillScreen(BACKGROUND);
@@ -146,43 +140,27 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = MAIN_MENU;
       break;
     case MAIN_MENU: //main selection
-      switch (current_choice) {
-        case 0:
-          // HOVER OVER "Make a post"
-          tft.drawRect(15, 98, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 98, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 98, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: state = TO_SELECT; current_choice = 0; break; // TO SELECT
-          }
-          break; // out of case 0
-        case 1:
-          // HOVER OVER "See a post"
-          tft.drawRect(15, 118, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 118, 98, 20, BACKGROUND); current_choice = 0; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 118, 98, 20, BACKGROUND); current_choice = 0; break;
-            case 2: state = TO_USER_MENU; break; // TO USER_MENU
-          }
-          break; // out of case 1
+      tft.drawRoundRect(15, 98 + current_choice*20, 98, 20, 10, CURSOR_COLOR);
+      switch (left_flag) {
+        case 0: break;
+        case 1: tft.drawRoundRect(15, 98 + current_choice*20, 98, 20, 10,BACKGROUND); current_choice = (current_choice == 0) ? 1: current_choice-1; break;
+        case 2: break;
       }
-      break; // out of switch(current_choice)
+      switch (right_flag) {
+        case 0: break;
+        case 1: tft.drawRoundRect(15, 98 + current_choice*20, 98, 20, 10, BACKGROUND); current_choice = (current_choice + 1) % 2; break;
+        case 2: switch(current_choice){
+          case 0: state = TO_SELECT; break;
+          case 1: state = TO_USER_MENU; break;
+        } break;
+      }
+      break;
 
     case TO_SELECT:
-      Serial.println("TAKE AN IMAGE OR VIDEO");
+      Serial.println("SELECT");
       tft.fillScreen(BACKGROUND);
       current_choice = 0;
-      tft.drawString("TAKE PIC OR VID", 15, 0, 2);
+      tft.drawString("MAKE A VIDEO", 15, 0, 2);
       tft.drawString("Playback", 30, 60, 2);
       tft.drawString("Take video", 30, 80, 2);
       tft.drawString("Upload", 30, 100, 2);
@@ -191,67 +169,23 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = SELECT;
       break;
     case SELECT: //look up at an image
-      switch (current_choice) {
-        case 0:
-          // HOVER OVER "Take photo"
-          tft.drawRect(15, 58, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 3; break;
-            case 2: break;
-          }
-
-          
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: state = TO_IMAGE; current_choice = 0; break; // TO IMAGE
-          }
-          break; // out of case 0
-        case 1:
-          // HOVER OVER "Take video"
-          tft.drawRect(15, 78, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 78, 98, 20, BACKGROUND); current_choice = 0; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 78, 98, 20, BACKGROUND); current_choice = 2; break;
-            case 2: state = TO_VIDEO; break; // TO VIDEO
-          }
-          break; // out of case 1
-        case 2:
-          // HOVER OVER "Upload content"
-          tft.drawRect(15, 98, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 98, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 98, 98, 20, BACKGROUND); current_choice = 3; break;
-            case 2: state = TO_UPLOAD; break; // TO UPLOAD
-          }
-          break; // out of case 2
-        case 3:
-          // HOVER OVER "Main menu"
-          tft.drawRect(15, 118, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 118, 98, 20, BACKGROUND); current_choice = 2; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 118, 98, 20, BACKGROUND); current_choice = 0; break;
-            case 2: state = TO_RESET; break; // TO RESET
-          }
-          break; // out of case 3
+      tft.drawRoundRect(15, 58 + current_choice*20, 98, 20, 10, CURSOR_COLOR);
+      switch (left_flag) {
+        case 0: break;
+        case 1: tft.drawRoundRect(15, 58 + current_choice*20, 98, 20, 10,BACKGROUND); current_choice = (current_choice == 0) ? 3: current_choice-1; break;
+        case 2: break;
       }
-      break; // out of switch(current_choice)
+      switch (right_flag) {
+        case 0: break;
+        case 1: tft.drawRoundRect(15, 58 + current_choice*20, 98, 20, 10, BACKGROUND); current_choice = (current_choice + 1) % 4; break;
+        case 2: switch(current_choice){
+          case 0: state = TO_PLAYBACK; break;
+          case 1: state = TO_VIDEO; break;
+          case 2: state = TO_UPLOAD; break;
+          case 3: state = TO_RESET; break;
+        } break;
+      }
+      break;
 
     case TO_USER_MENU:
       Serial.println("USER MENU");
@@ -268,87 +202,38 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.drawString("Current User:", 30, 30, 1);
       if (strcmp(selected_user, "") == 0) tft.drawString("NONE", 30, 40, 1);
       else tft.drawString(selected_user, 30, 40, 1);
-      switch (current_choice) {
-        case 0:
-          // HOVER OVER "Change users"
-          tft.drawRect(15, 78, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 78, 98, 20, BACKGROUND); current_choice = 2; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 78, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: state = TO_USER_SEL; break; 
-          }
-          break; // out of case 1
-        case 1:
-          // HOVER OVER "Confirm"
-          tft.drawRect(15, 98, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 98, 98, 20, BACKGROUND); current_choice = 0; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 98, 98, 20, BACKGROUND); current_choice = 2; break;
-            case 2: state = TO_STATE8; break; // TO STATE8
-          }
-          break; // out of case 2
-        case 2:
-          // HOVER OVER "Main Menu"
-          tft.drawRect(15, 118, 98, 20, CURSOR_COLOR);
-          switch (left_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 118, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: break;
-          }
-          switch (right_flag) {
-            case 0: break;
-            case 1: tft.drawRect(15, 118, 98, 20, BACKGROUND); current_choice = 0; break;
-            case 2: timer = millis(); state = TO_RESET; break; // TO RESET
-          }
-          break; // out of case 3
+      tft.drawRoundRect(15, 78 + current_choice*20, 98, 20, 10, CURSOR_COLOR);
+      switch (left_flag) {
+        case 0: break;
+        case 1: tft.drawRoundRect(15, 78 + current_choice*20, 98, 20, 10,BACKGROUND); current_choice = (current_choice == 0) ? 2: current_choice-1; break;
+        case 2: break;
+      }
+      switch (right_flag) {
+        case 0: break;
+        case 1: tft.drawRoundRect(15, 78 + current_choice*20, 98, 20, 10, BACKGROUND); current_choice = (current_choice + 1) % 3; break;
+        case 2: switch(current_choice){
+          case 0: state = TO_USER_SEL; break; 
+          case 1: state = TO_GET_VIDEO; break;
+          case 2: timer = millis(); state = TO_RESET; break;
+        } break;
       }
       break; // out of switch(current_choice)
 
     case TO_USER_SEL:
-      Serial.println("IN USER_SEL");
+      Serial.println("USER_SEL");
       tft.fillScreen(BACKGROUND);
       current_choice = 0;
       tft.drawString("USER SELECT", 25, 0, 2);
       tft.drawString("Loading...", 25, 20, 2);
       display_bottom_ui("UP", "DOWN", "------", "CONFIRM");
-      //obtain users with past history posts
       myRequest.get_users(users_available);
-
-      for (int i = 0; i < 5; i++) {
-        memset(user_list[i], 0, 10);
-      }
-      tokenize(users_available, user_list);
-
-
-      num_users = 0;
-      for (int i = 0; i < 5; i++) {
-        if (strcmp(user_list[i], "") != 0) {
-          num_users++;
-        }
-      }
-
+      num_users = tokenize(users_available, user_list);
       tft.fillRect(0, 20, 128, 20, BACKGROUND);
-
-      Serial.println(num_users);
-      for (int i = 0; i < num_users; i++) {
-        tft.drawString(user_list[i], 25, 30 + 20 * i, 2);
-      }
+      for (int i = 0; i < num_users; i++) tft.drawString(user_list[i], 25, 30 + 20 * i, 2);
       current_choice = 0;
       state = USER_SEL;
       break;
-
-
-    case USER_SEL://change user option
+    case USER_SEL: //change user option
       tft.drawRect(15, 28 + 20 * current_choice, 98, 20, CURSOR_COLOR);
       switch (left_flag) {
         case 0: break;
@@ -362,12 +247,11 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       break;
 
-    case TO_IMAGE:
+    case TO_PLAYBACK:
       tft.fillScreen(BACKGROUND);
-      state = IMAGE;
+      state = PLAYBACK;
       break;
-      
-    case IMAGE: //playback
+    case PLAYBACK: //playback
       playback(video, audio);
       content = true;
       state = TO_SELECT;
@@ -376,17 +260,11 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_VIDEO:
       tft.fillScreen(BACKGROUND);
       tft.drawString("Taking a video....", 0, 40, 1);
-      record();
       state = VIDEO;
       break;
     case VIDEO: //takes video
-      //
-      // Maybe have a separate state that actually records video,
-      // while this state waits for a button hold
-      // (video would only record while the button is held, or for a certain max length)
-      //
-      delay(1000);
       content = true;
+      record();
       Time_pressed = millis();   //gives user option to upload or go back home
       state = TO_SELECT;
       break;
@@ -395,27 +273,26 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.fillScreen(BACKGROUND);
       if (!content) {
         tft.drawString("No content....", 0, 40, 1);
-        delay(1000); // REMOVE FOR NON-BLOCKING (maybe move to separate state)
+        delay(1000); 
         state = TO_RESET;
       }
       else {
         tft.drawString("Uploading content....", 0, 40, 1);
-        myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-        myRequest.set_host("608dev-2.net");
-        myRequest.send_video((char*) video, (char*) audio);
         state = UPLOAD;
       }
       break;
     case UPLOAD: //upload content such as video and image.
       //Time_pressed = millis(); //time_pressed should be reset
-      delay(2000);
+      myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
+      myRequest.set_host("608dev-2.net");
+      myRequest.send_video((char*) video, (char*) audio);
       content = false;
       state = TO_MAIN_MENU;   //would it be better for the user to return them to IDLE? .. initially it was to SELECT
       break;
 
-    case TO_STATE8:
+    case TO_GET_VIDEO:
       tft.fillScreen(BACKGROUND);
-      Serial.println("Selected user");
+      Serial.println("GET_VIDEO");
       if (user_is_selected == false) {
         timer = millis();
         state = TO_RESET;
@@ -423,9 +300,9 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       tft.setCursor(0, 40, 1);
       tft.print("Sending GET request to get user's images");
       tft.drawString("DUMMY SCREEN", 0, 80, 2);
-      state = STATE8;
+      state = GET_VIDEO;
       break;
-    case STATE8: //user selected
+    case GET_VIDEO: 
       // GET request here?
       timer = millis(); //time_pressed should be resetted
       delay(2000);
@@ -434,12 +311,12 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       break;
 
     case TO_RESET:
-      Serial.println("back to main menu");
+      Serial.println("RESET");
       tft.fillScreen(BACKGROUND);
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      user_is_selected = false; ////adeddd///
+      user_is_selected = false; 
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
@@ -512,8 +389,7 @@ void playback(uint8_t* video, uint8_t* audio) {
   }
 }
 
-void tokenize(char* menu, char  user_list[][10]) {
-  Serial.println("IN ANOTHER TOKENIZe");
+int tokenize(char* menu, char  user_list[][10]) {
   char* temp = strtok(menu, "\n");
   int index = 0;
   while (temp != NULL) {
@@ -521,4 +397,11 @@ void tokenize(char* menu, char  user_list[][10]) {
     temp = strtok(NULL, "\n");
     index++;
   }
+  return index;
+}
+
+void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_4) {
+  tft.drawLine(0, 138, 128, 138, TFT_WHITE);
+  tft.drawString(label_1, 5, 140, 1); tft.drawString(label_2, 69, 140, 1);
+  tft.drawString(label_3, 5, 150, 1); tft.drawString(label_4, 69, 150, 1);
 }

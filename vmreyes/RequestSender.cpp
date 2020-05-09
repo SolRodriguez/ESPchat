@@ -30,9 +30,9 @@ void RequestSender::begin_wifi(char* network, char* password) {
   }
   char test[5];
   base64_decode(test, "YWJj",4);
-  Serial.println('buffer1');
+  // Serial.println('buffer1');
   Serial.println(test);
-  Serial.println('buffer1');
+  // Serial.println('buffer1');
 }
 
 void RequestSender::set_host(char* host_){
