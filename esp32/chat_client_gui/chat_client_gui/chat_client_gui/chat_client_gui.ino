@@ -28,8 +28,8 @@
 #define TO_USER_MENU 6
 #define USER_MENU 7
 
-#define TO_STATE4 8
-#define STATE4 9
+#define TO_USER_SEL 8
+#define USER_SEL 9
 
 #define TO_IMAGE 10
 #define IMAGE 11
@@ -46,8 +46,6 @@
 #define TO_RESET 18
 #define RESET 19
 
-#define TO_USER_CHANGE 20
-#define USER_CHANGE 21
 
 // Color stuff
 #define BACKGROUND TFT_BLACK
@@ -56,13 +54,13 @@
 
 const uint8_t SECONDS = 4;
 
-uint8_t video[80*60*SECONDS];
-uint8_t audio[8000*SECONDS];
+uint8_t video[80 * 60 * SECONDS];
+uint8_t audio[8000 * SECONDS];
 
 Camera myCam;
 RequestSender myRequest;
 TFT_eSPI tft = TFT_eSPI();
-Microphone mic = Microphone(36,8000,audio);
+Microphone mic = Microphone(36, 8000, audio);
 TaskHandle_t recordTask;
 
 const uint8_t INPUT_PIN1 = 16; //pin connected to button
@@ -78,15 +76,30 @@ uint8_t current_choice; // used for UI menu selection
 uint32_t Time_pressed; // timer
 uint32_t timer;
 
-bool selected_user = false; // user selections
+bool user_selected = false; // user selections
 bool content = false;
 
 const int SCREEN_HEIGHT = 160;
 const int SCREEN_WIDTH = 128;
 
+char user_name[10];
+char users_available[50];
+int selected;
+char menu[50]; //myRequest.get_users(users_available);
+char selected_user[10] = "";
+
+
+char download_user_data[2000];// ??
+int num = 0;
+char output[100] = {};
+
+const int MAX = 5;
+
+char user_list[5][10];
+
 void setup() {
   //Original set-up from chat_client_gui
-  Serial.begin(115200); 
+  Serial.begin(115200);
   tft.init();
   tft.setRotation(2);
   tft.setTextSize(1);
@@ -99,11 +112,11 @@ void setup() {
 
   myCam.setup();
 
-//  myRequest.begin_wifi("2WIRE782", "4532037186");
-//  myRequest.set_username("vmreyes");
+  //  myRequest.begin_wifi("2WIRE782", "4532037186");
+  //  myRequest.set_username("vmreyes");
   myRequest.begin_wifi("HoangSPB6-2G", "sU=09nV=02jG=05=#");
   myRequest.set_username("jghoang");
-  
+
   myRequest.set_host("608dev-2.net");
   myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
 }
@@ -131,7 +144,6 @@ void display_bottom_ui(char* label_1, char* label_2, char* label_3, char* label_
 
 void fsm(uint8_t left_flag, uint8_t right_flag) {
   switch (state) {
-
     case TO_MAIN_MENU: // lead-in to MAIN MENU
       Serial.println("MAIN MENU");
       tft.fillScreen(BACKGROUND);
@@ -198,7 +210,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
             case 2: break;
           }
 
-          
+
           switch (right_flag) {
             case 0: break;
             case 1: tft.drawRect(15, 58, 98, 20, BACKGROUND); current_choice = 1; break;
@@ -274,7 +286,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
           switch (right_flag) {
             case 0: break;
             case 1: tft.drawRect(15, 78, 98, 20, BACKGROUND); current_choice = 1; break;
-            case 2: state = TO_USER_CHANGE; break; // TO USER_CHANGE
+            case 2: state = TO_USER_SEL; break;
           }
           break; // out of case 1
         case 1:
@@ -308,41 +320,60 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       }
       break; // out of switch(current_choice)
 
-    case TO_STATE4:
-      Serial.println("IN STATE4");
+    case TO_USER_SEL:
+      Serial.println("IN USER_SEL");
       tft.fillScreen(BACKGROUND);
-      state = STATE4;
+      current_choice = 0;
+      tft.drawString("USER SELECT", 25, 0, 2);
+      tft.drawString("Loading...", 25, 20, 2);
+      display_bottom_ui("UP", "DOWN", "------", "CONFIRM");
+      myRequest.get_users(users_available);
+      for (int i = 0; i < 5; i++) {
+        memset(user_list[i], 0, 10);
+      }
+      tokenize(users_available, user_list);
+      num = 0;
+      for (int i = 0; i < 5; i++) {
+        if (strcmp(user_list[i], "") != 0) {
+          num++;
+        }
+      }
+      tft.fillRect(0, 20, 128, 20, BACKGROUND);
+      Serial.println(num);
+      for (int i = 0; i < num; i++) {
+        tft.drawString(user_list[i], 25, 30 + 20 * i, 2);
+      }
+      current_choice = 0;
+      state = USER_SEL;
       break;
-    case STATE4://change user option
-      tft.setCursor(0, 40, 1);
-      tft.print("Choose users here");
-      myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
-      myRequest.set_host("608dev-2.net");
-      myRequest.get_video("vmreyes", video, audio);
-      playback(video, audio);
-      delay(2000);
-      selected_user = true;
-      Time_pressed = millis();
-      state = TO_USER_MENU;
+    case USER_SEL://change user option
+      //      tft.setCursor(0, 40, 1);
+      //      tft.print("Choose users here");
+      //      myRequest.set_destination("/sandbox/sc/team044/espchat/server/espchat.py");
+      //      myRequest.set_host("608dev-2.net");
+      //      myRequest.get_video("vmreyes", video, audio);
+      //      playback(video, audio);
+      //      delay(2000);
+      //      user_selected = true;
+      //      Time_pressed = millis();
+      tft.drawRect(15, 28 + 20 * current_choice, 98, 20, CURSOR_COLOR);
+      switch (left_flag) {
+        case 0: break;
+        case 1: tft.drawRect(15, 28 + 20 * current_choice, 98, 20, BACKGROUND); if (current_choice == 0) current_choice = num - 1; else current_choice --;  break;
+        case 2: break;
+      }
+      switch (right_flag) {
+        case 0: break;
+        case 1: tft.drawRect(15, 28 + 20 * current_choice, 98, 20, BACKGROUND); current_choice ++; if (current_choice >= num) current_choice = 0; break;
+        case 2: user_selected = true; sprintf(selected_user, user_list[current_choice]); Time_pressed = millis(); state = TO_USER_MENU; break;
+      }
       break;
-    //      tft.setCursor(0, 40, 1);
-    //      tft.print("b1 - clicking through a list of user's");   // or is a new user returned to us... and we confirm them by going into state 5//
-    //      tft.setCursor(0, 80, 1);
-    //      tft.print("b2 - once done --> user menu");
-    //      //iterate throughout options
-    //      //must display options of users..
-    //      selected_user = true;
-    //      Time_pressed = millis();   /// restart timeer to have the option to leave or see post//
-    //      //go back to state 3 --> button2 == 0
-    //      if (b2 == 0) { //go back to state3  //b1==0//
-    //        state = TO_USER_MENU;
-    //      }
 
     case TO_IMAGE:
       tft.fillScreen(BACKGROUND);
       state = IMAGE;
       break;
-      
+
     case IMAGE: //playback
       playback(video, audio);
       content = true;
@@ -392,7 +423,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
     case TO_STATE8:
       tft.fillScreen(BACKGROUND);
       Serial.println("Selected user");
-      if (selected_user == false) {
+      if (user_selected == false) {
         timer = millis();
         state = TO_RESET;
       }
@@ -405,7 +436,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       // GET request here?
       timer = millis(); //time_pressed should be resetted
       delay(2000);
-      selected_user = false;
+      user_selected = false;
       state = TO_MAIN_MENU;
       break;
 
@@ -415,67 +446,49 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       state = RESET;
       break;
     case RESET: //RESET state - helpful when avoiding button memory overlapping
-      selected_user = false; ////adeddd///
+      user_selected = false; ////adeddd///
       content = false;
       delay(100);
       state = TO_MAIN_MENU;
       break;
-
-    case TO_USER_CHANGE:
-      Serial.println("IN STATE 10");
-      tft.fillScreen(BACKGROUND);
-      tft.drawString("Choosing user...", 0, 40, 1);
-      tft.drawString("DUMMY SCREEN", 0, 80, 2);
-      timer = millis();
-      state = USER_CHANGE;
-      break;
-    case USER_CHANGE:
-      state = TO_STATE4;
-      // I'm unsure of what's supposed to be going on here - juju
-
-      //      if (b2 == 1 && b1 == 1 && millis() - timer < LONG_TIMEOUT) {
-      //        state = TO_STATE4;
-      //      }
-
-  } // end of switch(state)
+  }
 }
 
-
-void record(){
+void record() {
   int k = 0;
   xTaskCreatePinnedToCore(
-      recordCode, /* Function to implement the task */
-      "Recording Task", /* Name of the task */
-      10000,  /* Stack size in words */
-      NULL,  /* Task input parameter */
-      5,  /* Priority of the task */
-      &recordTask,  /* Task handle. */
-      0); /* Core where the task should run */
+    recordCode, /* Function to implement the task */
+    "Recording Task", /* Name of the task */
+    10000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    5,  /* Priority of the task */
+    &recordTask,  /* Task handle. */
+    0); /* Core where the task should run */
 
-  for(int frames = 0; frames < SECONDS; frames++){
+  for (int frames = 0; frames < SECONDS; frames++) {
     myCam.capture();
-    for(int i = 0; i < 240; i++){
-      for(int j = 0; j < 320; j++){
+    for (int i = 0; i < 240; i++) {
+      for (int j = 0; j < 320; j++) {
         uint8_t hv = SPI.transfer(0x00);
         uint8_t hl = SPI.transfer(0x00);
-        if(!(i % 4) && !(j % 4)){
+        if (!(i % 4) && !(j % 4)) {
           uint16_t pixel_val = hv << 8 | hl;
-          uint8_t pixel_data = ((pixel_val & 0xE000)>>8) | ((pixel_val & 0x0700)>>6) | ((pixel_val & 0x0018)>>3);
-          if(pixel_data == 0x00){
+          uint8_t pixel_data = ((pixel_val & 0xE000) >> 8) | ((pixel_val & 0x0700) >> 6) | ((pixel_val & 0x0018) >> 3);
+          if (pixel_data == 0x00) {
             pixel_data += 36;
           }
           video[k++] = pixel_data;
         }
       }
     }
-    tft.pushImage(30,60,80,60,video+frames*60*80);
+    tft.pushImage(30, 60, 80, 60, video + frames * 60 * 80);
   }
 }
 
-void recordCode(void* parameters){
-  mic.start_recording(SECONDS*8000);
+void recordCode(void* parameters) {
+  mic.start_recording(SECONDS * 8000);
   bool recording_ = true;
-  while(recording_){
+  while (recording_) {
     recording_ = !mic.on_update();
   }
   vTaskDelete(NULL);
@@ -501,5 +514,17 @@ void playback(uint8_t* video, uint8_t* audio) {
       a_ind++;
       mic_timer = micros();
     }
+  }
+}
+
+
+void tokenize(char* menu, char  user_list[][10]) {
+  Serial.println("IN ANOTHER TOKENIZe");
+  char* temp = strtok(menu, "\n");
+  int index = 0;
+  while (temp != NULL) {
+    sprintf(user_list[index], temp);
+    temp = strtok(NULL, "\n");
+    index++;
   }
 }
