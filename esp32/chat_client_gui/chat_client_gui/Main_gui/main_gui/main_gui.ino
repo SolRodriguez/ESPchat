@@ -366,24 +366,26 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
       Serial.println("RIGHT FLAG");
       Serial.println(right_button.update());
 
-      
-      
-      if (left_button.update() == 1) { //scroll thru user options
+//      
+//      
+//      if (left_button.update() == 1) { //scroll thru user options
+//        Serial.println("SCROLLING BY: LEFT BUTTON");
+//        selected = (selected + 1) % num;
+//      }
+//      if (right_flag == 1) { //luser selected
+//        Serial.println("SELECT CLICK WITH RIGHT");
+//        tokenize(menu, selected);
+//        tft.fillScreen(BACKGROUND);
+//      }
+
+
+      if (left_flag == 1) { //scroll thru user options
         Serial.println("SCROLLING BY: LEFT BUTTON");
         selected = (selected + 1) % num;
+        Serial.println("Value of selected");
+        Serial.println(selected);
       }
       if (right_flag == 1) { //luser selected
-        Serial.println("SELECT CLICK WITH RIGHT");
-        tokenize(menu, selected);
-        tft.fillScreen(BACKGROUND);
-      }
-
-
-      if (left_button.update() == 1) { //scroll thru user options
-        Serial.println("SCROLLING BY: LEFT BUTTON");
-        selected = (selected + 1) % num;
-      }
-      if (right_button.update() == 1) { //luser selected
         Serial.println("SELECT CLICK WITH RIGHT");
         tokenize(menu, selected);
         tft.fillScreen(BACKGROUND);
@@ -648,7 +650,7 @@ void tokenize(char* menu, int selection)
   Serial.println("ENTERED TOKENIZE");
   if (selection == 1)
   {
-    char *selected_user = strtok(menu, "\n");
+    selected_user = strtok(menu, "\n");
   }
   else if (selection > 1)
   {
