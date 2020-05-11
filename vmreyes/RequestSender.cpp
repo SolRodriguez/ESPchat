@@ -152,13 +152,16 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
     // ('
       for(uint8_t i = 0; i < 2; i++){
         client.read();
+        Serial.print("."); //
       }
+      Serial.print("\n");
     Serial.println("LINE 150");
     // image_data
       bool storing = true;
       while(storing){
         for(uint8_t i = 0; i < 4; i++){
           read_val = client.read();
+          delay(1);
           if((char) read_val == '='){
             storing = false;
             break;
@@ -167,9 +170,11 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
         }
         if(storing){
           base64_decode(sample, holder, 4);
-          Serial.print((char*)holder);
-          Serial.print(" ");
-          Serial.print((char*)sample);
+          // Serial.print((char*)holder);
+          // Serial.print(" ");
+          // Serial.print((char*)sample);
+          // Serial.print(" ");
+          Serial.print(video_index);
           Serial.print(" ");
           for(uint8_t i = 0; i < 3; i++){
             video[video_index] = (uint8_t) sample[i];
@@ -187,6 +192,7 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
       while(storing_a){
         for(uint8_t i = 0; i < 4; i++){
           read_val = client.read();
+          delay(1);
           if(read_val == '='){
             storing_a = false;
             break;
@@ -195,9 +201,11 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
         }
         if(storing_a){
           base64_decode(sample, holder, 4);
-          Serial.print((char*)holder);
-          Serial.print(" ");
-          Serial.print((char*)sample);
+          // Serial.print((char*)holder);
+          // Serial.print(" ");
+          // Serial.print((char*)sample);
+          // Serial.print(" ");
+          Serial.print(audio_index);
           Serial.print(" ");
           for(uint8_t i = 0; i < 3; i++){
             audio[audio_index] = (uint8_t) sample[i];
