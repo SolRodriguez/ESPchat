@@ -151,54 +151,49 @@ void RequestSender::get_video(char* username, uint8_t* video, uint8_t* audio) {
     Serial.println("LINE 145");
     // ('
       for(uint8_t i = 0; i < 2; i++){
-        client.read();
+        Serial.println((char) client.read());
       }
     Serial.println("LINE 150");
     // image_data
-      bool storing = true;
-      while(storing){
-        for(uint8_t i = 0; i < 4; i++){
-          read_val = client.read();
-          if((char) read_val == '='){
-            storing = false;
-            break;
-          }
-          holder[i] = (char) read_val;
+    bool storing = true;
+    while(storing){
+      for(uint8_t i = 0; i < 4; i++){
+        read_val = (char) client.read();
+        delayMicroseconds(10);
+        if(read_val == '\''){
+          storing = false;
+          break;
         }
-        if(storing){
-          base64_decode(sample, holder, 4);
-          Serial.print((char*)holder);
-          Serial.print(" ");
-          Serial.print((char*)sample);
-          Serial.print(" ");
-          for(uint8_t i = 0; i < 3; i++){
-            video[video_index] = (uint8_t) sample[i];
-            video_index++;
-          }
+        holder[i] = read_val;
+      }
+      if(storing){
+        base64_decode(sample, holder, 4);
+        Serial.println(holder);
+        for(uint8_t i = 0; i < 3; i++){
+          video[video_index] = (uint8_t) sample[i];
+          video_index++;
         }
       }
+    }
 
       // ,\n'
-      while(client.read() != '\'');
       while(client.read() != '\'');
 
       Serial.println("LINE 185");
       bool storing_a = true;
       while(storing_a){
         for(uint8_t i = 0; i < 4; i++){
-          read_val = client.read();
-          if(read_val == '='){
+          read_val = (char) client.read();
+          delayMicroseconds(10);
+          if(read_val == '\''){
             storing_a = false;
             break;
           }
-          holder[i] = (char) read_val;
+          holder[i] =  read_val;
         }
         if(storing_a){
           base64_decode(sample, holder, 4);
-          Serial.print((char*)holder);
-          Serial.print(" ");
-          Serial.print((char*)sample);
-          Serial.print(" ");
+          Serial.println((char*) holder);
           for(uint8_t i = 0; i < 3; i++){
             audio[audio_index] = (uint8_t) sample[i];
             audio_index++;
