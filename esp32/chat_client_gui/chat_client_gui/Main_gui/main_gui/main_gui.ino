@@ -359,15 +359,76 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
 
       tft.fillRect(0, 20, 128, 20, BACKGROUND);
 
+<<<<<<< HEAD
+//      
+//      
+//      if (left_button.update() == 1) { //scroll thru user options
+//        Serial.println("SCROLLING BY: LEFT BUTTON");
+//        selected = (selected + 1) % num;
+//      }
+//      if (right_flag == 1) { //luser selected
+//        Serial.println("SELECT CLICK WITH RIGHT");
+//        tokenize(menu, selected);
+//        tft.fillScreen(BACKGROUND);
+//      }
+
+
+      if (left_flag == 1) { //scroll thru user options
+        Serial.println("SCROLLING BY: LEFT BUTTON");
+        selected = (selected + 1) % num;
+        Serial.println("Value of selected");
+        Serial.println(selected);
+      }
+      if (right_flag == 1) { //luser selected
+        Serial.println("SELECT CLICK WITH RIGHT");
+        tokenize(menu, selected);
+        tft.fillScreen(BACKGROUND);
+=======
       Serial.println(num);
       for (int i = 0; i < num; i++) {
         tft.drawString(user_list[i], 25, 30 + 20 * i, 2);
+>>>>>>> a2a7833f072f0c027986d41b9e7d6a4b56220c1e
       }
       current_choice = 0;
       state = USER_SEL;
       break;
 
 
+<<<<<<< HEAD
+        //users(num);
+
+      //      if (num == 1) {
+      //        tft.drawString(user1, 5, 20, 2);
+      //      }
+      //      if (num == 2) {
+      //        tft.drawString(user1, 5, 20, 2);
+      //        tft.drawString(user2, 5, 40, 2);
+      //      }
+      //      if (num == 3) {
+      //        tft.drawString(user1, 5, 20, 2);
+      //        tft.drawString(user2, 5, 40, 2);
+      //        tft.drawString(user3, 5, 60, 2);
+      //      }
+      //      if (num == 4) {
+      //        tft.drawString(user1, 5, 20, 2);
+      //        tft.drawString(user2, 5, 40, 2);
+      //        tft.drawString(user3, 5, 60, 2);
+      //        tft.drawString(user4, 5, 80, 2);
+      //      }
+      //      if (num == 5) {
+      //        tft.drawString(user1, 5, 20, 2);
+      //        tft.drawString(user2, 5, 40, 2);
+      //        tft.drawString(user3, 5, 60, 2);
+      //        tft.drawString(user4, 5, 80, 2);
+      //        tft.drawString(user5, 5, 100, 2);
+      //      }
+      delay(2000);
+
+//take a pause
+//      user_selected = true;
+//      Time_pressed = millis();
+//      state = TO_USER_MENU;
+=======
     case USER_SEL://change user option
       tft.drawRect(15, 28 + 20 * current_choice, 98, 20, CURSOR_COLOR);
       switch (left_flag) {
@@ -380,6 +441,7 @@ void fsm(uint8_t left_flag, uint8_t right_flag) {
         case 1: tft.drawRect(15, 28 + 20 * current_choice, 98, 20, BACKGROUND); current_choice ++; if (current_choice >= num) current_choice = 0; break;
         case 2: user_selected = true; sprintf(selected_user, user_list[current_choice]); Time_pressed = millis(); state = TO_USER_MENU; break;
       }
+>>>>>>> a2a7833f072f0c027986d41b9e7d6a4b56220c1e
       break;
 
     case TO_IMAGE:
@@ -539,6 +601,23 @@ void playback(uint8_t* video, uint8_t* audio) {
   int mil_timer = millis();
   int mic_timer = micros();
 
+<<<<<<< HEAD
+void tokenize(char* menu, int selection)
+{
+  Serial.println("ENTERED TOKENIZE");
+  if (selection == 1)
+  {
+    selected_user = strtok(menu, "\n");
+  }
+  else if (selection > 1)
+  {
+    selected_user = strtok(menu, "\n");
+    int8_t ctr = 0;
+    while (ctr < selection)
+    {
+      selected_user = strtok(NULL, ",");
+      ctr ++;
+=======
   int frames = 0;
   int a_ind = 0;
 
@@ -554,6 +633,7 @@ void playback(uint8_t* video, uint8_t* audio) {
       dacWrite(25, audio[a_ind]);
       a_ind++;
       mic_timer = micros();
+>>>>>>> a2a7833f072f0c027986d41b9e7d6a4b56220c1e
     }
   }
 }

@@ -22,7 +22,7 @@ class RequestSender
   void send_video(char* img_ptr, char* audio_ptr);
   void set_username(char* username_);
   void get_video(char* username, uint8_t* video, uint8_t* audio);
-
+  char get_users(char* users_available); 
 
   private:
   uint8_t char_append(char* buff, char c, uint16_t buff_size);
